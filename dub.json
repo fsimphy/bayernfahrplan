@@ -1,0 +1,14 @@
+{
+	"name": "bayernfahrplan",
+	"authors": [
+		"Johannes Loher",
+		"Oliver Rümpelein"
+	],
+	"dependencies": {
+		"requests": "~>0.3.1",
+		"kxml": "~>1.0.1"
+	},
+	"description": "A minimal D application.",
+	"copyright": "Copyright © 2016, Johannes Loher",
+	"license": "proprietary"
+}
