@@ -19,9 +19,28 @@ void loadSubstitutionFile(string fileName)
     }
 }
 
-auto substitute(string s)
+auto substitute(string s) @safe nothrow
 {
     return s in map ? map[s] : s;
+}
+
+@safe unittest
+{
+    map[""] = "";
+    assert(substitute("") == "");
+
+    map["a"] = "b";
+    assert(substitute("a") == "b");
+
+    map["Regensburg Danziger Freiheit"] = "Danziger Freiheit";
+    assert(substitute("Regensburg Danziger Freiheit") == "Danziger Freiheit");
+
+    map["Regensburg Danziger Freiheit"] = "Anderer Test";
+    assert(substitute("Regensburg Danziger Freiheit") == "Anderer Test");
+
+    assert(substitute("z") == "z");
+
+    assert(substitute("Regensburg Hauptbahnhof") == "Regensburg Hauptbahnhof");
 }
 
 private:
