@@ -81,6 +81,8 @@ auto parseTime(in string input) @safe
 
     assert("00:00 00:00".parseTime == tuple(TimeOfDay(0, 0), dur!"minutes"(0)));
 
+    assert("00:00 00:00 12:00".parseTime == tuple(TimeOfDay(0, 0), dur!"minutes"(0)));
+
     assert("12:3412:34".parseTime == tuple(TimeOfDay(12, 34), dur!"minutes"(0)));
 
     assert("ölqjfo12:34oieqf12:31ölqjf".parseTime == tuple(TimeOfDay(12, 31), dur!"minutes"(3)));
