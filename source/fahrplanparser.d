@@ -1,11 +1,11 @@
 module fahrplanparser;
 
+private:
+
 import std.algorithm : filter, map, startsWith;
-import std.array : array, empty, front, replace;
+import std.array : empty, front, replace;
 import std.conv : to;
 import std.datetime : dur, TimeOfDay, Clock;
-import std.format : format;
-import std.json : JSONValue;
 import std.regex : ctRegex, matchAll;
 import std.string : strip;
 import std.typecons : tuple;
@@ -16,20 +16,16 @@ import substitution;
 
 public:
 
-auto parseFahrplan(in string data)
+auto parsedFahrplan(in string data)
 {
-    auto currentTime = Clock.currTime;
-    JSONValue j = ["time" : "%02s:%02s".format(currentTime.hour, currentTime.minute)];
-    j.object["departures"] = data.readDocument
+    return data.readDocument
             .parseXPath(`//table[@id="departureMonitor"]/tbody/tr`)[1 .. $]
             .getRowContents
             .filter!(row => !row.empty)
             .map!(a => ["departure" : a[0].parseTime[0].to!string[0 .. $ - 3],
                         "delay" : a[0].parseTime[1].total!"minutes".to!string,
                         "line" : a[1],
-                        "direction" : a[2].substitute])
-            .array.JSONValue;
-    return j.toPrettyString.replace("\\/", "/");
+                        "direction" : a[2].substitute]);
 }
 
 private:

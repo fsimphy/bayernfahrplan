@@ -1,5 +1,10 @@
 import std.getopt : defaultGetoptPrinter, getopt;
 import std.stdio : File, stdout, writeln;
+import std.datetime : Clock;
+import std.json : JSONValue;
+import std.format : format;
+import std.array: array, replace;
+
 
 import requests : postContent;
 
@@ -32,7 +37,10 @@ void main(string[] args)
 
     loadSubstitutionFile(substitutionFileName);
 
-    auto output = (cast(string) content.data).parseFahrplan;
+    auto currentTime = Clock.currTime;
+    JSONValue j = ["time" : "%02s:%02s".format(currentTime.hour, currentTime.minute)];
+    j.object["departures"] = (cast(string) content.data).parsedFahrplan.array.JSONValue;
+    auto output = j.toPrettyString.replace("\\/", "/");
     if (fileName !is null)
     {
         auto outfile = File(fileName, "w");
