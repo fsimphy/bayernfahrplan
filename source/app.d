@@ -1,10 +1,9 @@
-import std.getopt : defaultGetoptPrinter, getopt;
-import std.stdio : File, stdout, writeln;
-import std.datetime : Clock;
-import std.json : JSONValue;
-import std.format : format;
 import std.array: array, replace;
-
+import std.datetime : Clock;
+import std.format : format;
+import std.getopt : defaultGetoptPrinter, getopt;
+import std.json : JSONValue;
+import std.stdio : File, writeln;
 
 import requests : postContent;
 

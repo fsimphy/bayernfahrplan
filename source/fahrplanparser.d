@@ -1,11 +1,9 @@
 module fahrplanparser;
 
-private:
-
-import std.algorithm : filter, map, startsWith;
+import std.algorithm : filter, map;
 import std.array : empty, front, replace;
 import std.conv : to;
-import std.datetime : dur, TimeOfDay, Clock;
+import std.datetime : dur, TimeOfDay;
 import std.regex : ctRegex, matchAll;
 import std.string : strip;
 import std.typecons : tuple;
