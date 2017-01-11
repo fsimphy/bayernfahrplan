@@ -1,4 +1,4 @@
-import std.array: array, replace;
+import std.array : array, replace;
 import std.datetime : Clock;
 import std.format : format;
 import std.getopt : defaultGetoptPrinter, getopt;
@@ -16,10 +16,12 @@ void main(string[] args)
     string fileName;
     string busStop = "Universität Regensburg";
     string substitutionFileName = "replacement.txt";
+
     auto helpInformation = getopt(args,
             "file|f", "The file that the data is written to.", &fileName,
             "stop|s", "The bus stop for which to fetch data.", &busStop,
             "replacement-file|r", "The file that contais the direction name replacement info.", &substitutionFileName);
+
     if (helpInformation.helpWanted)
     {
         defaultGetoptPrinter("Some information about the program.", helpInformation.options);
@@ -43,7 +45,8 @@ void main(string[] args)
     if (fileName !is null)
     {
         auto outfile = File(fileName, "w");
-        scope(exit) outfile.close;
+        scope (exit)
+            outfile.close;
         outfile.writeln(output);
     }
     else

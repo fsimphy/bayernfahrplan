@@ -6,24 +6,37 @@ import std.conv : to;
 import std.datetime : dur, TimeOfDay;
 import std.regex : ctRegex, matchAll;
 import std.string : strip;
-import std.typecons : tuple;
+import std.typecons : tuple, Tuple;
 
 import kxml.xml : readDocument, XmlNode;
 
 import substitution;
 
+private:
+
+enum ScheduleHeadings
+{
+    date,
+    departure,
+    line,
+    direction,
+    platform
+}
+
 public:
 
 auto parsedFahrplan(in string data)
 {
+    // dfmt off
     return data.readDocument
-            .parseXPath(`//table[@id="departureMonitor"]/tbody/tr`)[1 .. $]
-            .getRowContents
-            .filter!(row => !row.empty)
-            .map!(a => ["departure" : a[0].parseTime[0].to!string[0 .. $ - 3],
-                        "delay" : a[0].parseTime[1].total!"minutes".to!string,
-                        "line" : a[1],
-                        "direction" : a[2].substitute]);
+        .parseXPath(`//table[@id="departureMonitor"]/tbody/tr`)[1 .. $]
+        .getRowContents
+        .filter!(row => !row.empty)
+        .map!(a => ["departure" : a[0].parseTime[0].to!string[0 .. $ - 3],
+                    "delay" : a[0].parseTime[1].total!"minutes".to!string,
+                    "line" : a[1],
+                    "direction" : a[2].substitute]);
+    // dfmt on
 }
 
 private:
@@ -54,7 +67,7 @@ auto parseTime(in string input) @safe
                 matches.front["minutes"].to!int);
         auto timeDiff = actualTime - expectedTime;
 
-        if(timeDiff < dur!"minutes"(0))
+        if (timeDiff < dur!"minutes"(0))
             timeDiff = dur!"hours"(24) + timeDiff;
 
         return tuple(expectedTime, timeDiff);
@@ -65,6 +78,7 @@ auto parseTime(in string input) @safe
 @safe unittest
 {
     import std.exception : assertThrown;
+
     assertThrown(parseTime(""));
     assertThrown(parseTime("lkeqf"));
     assertThrown(parseTime(":"));
@@ -83,14 +97,64 @@ auto parseTime(in string input) @safe
 
     assert("17:53 (planmäßig 17:51 Uhr)".parseTime == tuple(TimeOfDay(17, 51), dur!"minutes"(2)));
 
-    assert("00:00 23:59".parseTime == tuple(TimeOfDay(23,59), dur!"minutes"(1)));
+    assert("00:00 23:59".parseTime == tuple(TimeOfDay(23, 59), dur!"minutes"(1)));
 }
 
 auto getRowContents(XmlNode[] rows)
 {
-    return rows.map!(row => row.parseXPath("//td")[1 .. $ - 1].map!((column) {
-            auto link = column.parseXPath("//a");
-            if (!link.empty)
-                return link.front.getCData.replace("...", "");
-            return column.getCData;}));
+    return rows.map!(x => getRowContent(x));
+}
+
+auto getRowContent(XmlNode row)
+{
+    return row.parseXPath("//td")[ScheduleHeadings.departure .. ScheduleHeadings.direction + 1].map!(
+            cell => stripLinks(cell));
+}
+
+auto stripLinks(XmlNode cell)
+{
+    auto links = cell.parseXPath("//a");
+    if (links.empty)
+    {
+        return cell.getCData;
+    }
+    else
+    {
+        return links.front.getCData.replace("...", "");
+    }
+}
+
+@system unittest
+{
+    auto foo = new XmlNode("foo");
+    assert(foo.stripLinks == "");
+
+    auto link = new XmlNode("a");
+    link.setCData("test");
+    foo.addChild(link);
+    assert(foo.stripLinks == "test");
+
+    link.setCData("test2...");
+    assert(foo.stripLinks == "test2");
+
+    auto bar = new XmlNode("bar");
+    bar.setCData("test3");
+    assert(bar.stripLinks == "test3");
+
+    bar.addChild(link);
+    assert(bar.stripLinks == "test2");
+
+    auto baz = new XmlNode("baz");
+    auto subNode = new XmlNode("subNode");
+    baz.addChild(subNode);
+    assert(baz.stripLinks == "");
+
+    baz.addChild(link);
+    assert(baz.stripLinks == "test2");
+
+    baz.addCData("test4");
+    assert(baz.stripLinks == "test2");
+
+    baz.removeChild(link);
+    assert(baz.stripLinks == "test4");
 }
