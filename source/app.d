@@ -14,7 +14,7 @@ import substitution;
 void main(string[] args)
 {
     string fileName;
-    string busStop = "Universität Regensburg";
+    string busStop = "4014080";
     string substitutionFileName = "replacement.txt";
 
     auto helpInformation = getopt(args,
