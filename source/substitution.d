@@ -4,19 +4,11 @@ public:
 
 void loadSubstitutionFile(string fileName)
 {
-    import std.file : slurp, exists, isFile;
+    import std.file : slurp;
     import std.algorithm.iteration : each;
-
-    if (fileName.exists && fileName.isFile)
-    {
-        auto data = slurp!(string, string)(fileName, `"%s" = "%s"`);
-        map = (string[string]).init;
-        data.each!(pair => map[pair[0]] = pair[1]);
-    }
-    else
-    {
-        map = (string[string]).init;
-    }
+    auto data = slurp!(string, string)(fileName, `"%s" = "%s"`);
+    map = (string[string]).init;
+    data.each!(pair => map[pair[0]] = pair[1]);
 }
 
 auto substitute(string s) @safe nothrow
