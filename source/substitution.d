@@ -1,12 +1,16 @@
 module substitution;
 
-import std.file: slurp;
+import std.file : slurp;
+import std.meta : AliasSeq;
+import std.traits : Parameters;
 
 public:
 
 void loadSubstitutionFile(alias slurpFun = slurp)(string fileName)
+        if (is(Parameters!(slurpFun!(string, string)) == AliasSeq!(string, const char[])))
 {
     import std.algorithm.iteration : each;
+
     auto data = slurpFun!(string, string)(fileName, `"%s" = "%s"`);
     map = (string[string]).init;
     data.each!(pair => map[pair[0]] = pair[1]);
@@ -14,8 +18,7 @@ void loadSubstitutionFile(alias slurpFun = slurp)(string fileName)
 
 @safe unittest
 {
-    import std.algorithm: canFind;
-    import std.typecons: Tuple, tuple;
+    import std.typecons : Tuple, tuple;
 
     static Tuple!(string, string)[] mockSlurpEmpty(Type1, Type2)(string filename, in char[] format)
     {
@@ -25,7 +28,8 @@ void loadSubstitutionFile(alias slurpFun = slurp)(string fileName)
     loadSubstitutionFile!mockSlurpEmpty("");
     assert(map.length == 0);
 
-    static Tuple!(string, string)[] mockSlurpEmptyEntry(Type1, Type2)(string filename, in char[] format)
+    static Tuple!(string, string)[] mockSlurpEmptyEntry(Type1, Type2)(string filename,
+            in char[] format)
     {
         return [tuple("", "")];
     }
@@ -35,7 +39,8 @@ void loadSubstitutionFile(alias slurpFun = slurp)(string fileName)
     assert(map.length == 1);
     assert(map[""] == "");
 
-    static Tuple!(string, string)[] mockSlurpSingleEntry(Type1, Type2)(string filename, in char[] format)
+    static Tuple!(string, string)[] mockSlurpSingleEntry(Type1, Type2)(string filename,
+            in char[] format)
     {
         return [tuple("foo", "bar")];
     }
@@ -45,7 +50,8 @@ void loadSubstitutionFile(alias slurpFun = slurp)(string fileName)
     assert(map.length == 1);
     assert(map["foo"] == "bar");
 
-    static Tuple!(string, string)[] mockSlurpMultipleEntries(Type1, Type2)(string filename, in char[] format)
+    static Tuple!(string, string)[] mockSlurpMultipleEntries(Type1, Type2)(
+            string filename, in char[] format)
     {
         return [tuple("", ""), tuple("0", "1"), tuple("Text in", "wird durch diesen ersetzt")];
     }
