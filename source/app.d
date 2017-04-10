@@ -36,7 +36,7 @@ void main(string[] args)
              "mode" : "direct",
              "type_dm" : "any",
              "itdLPxx_bcl" : "true"]);
-    
+
     if (substitutionFileName.exists && substitutionFileName.isFile)
     {
         loadSubstitutionFile(substitutionFileName);
