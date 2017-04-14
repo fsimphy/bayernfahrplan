@@ -11,9 +11,8 @@ void loadSubstitutionFile(alias slurpFun = slurp)(string fileName)
 {
     import std.algorithm.iteration : each;
 
-    auto data = slurpFun!(string, string)(fileName, `"%s" = "%s"`);
     map = (string[string]).init;
-    data.each!(pair => map[pair[0]] = pair[1]);
+    slurpFun!(string, string)(fileName, `"%s" = "%s"`).each!(pair => map[pair[0]] = pair[1]);
 }
 
 @safe unittest
