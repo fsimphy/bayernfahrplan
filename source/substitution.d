@@ -1,22 +1,68 @@
 module substitution;
 
+import std.file : slurp;
+import std.meta : AliasSeq;
+import std.traits : Parameters;
+
 public:
 
-void loadSubstitutionFile(string fileName)
+void loadSubstitutionFile(alias slurpFun = slurp)(string fileName)
+        if (is(Parameters!(slurpFun!(string, string)) == AliasSeq!(string, const char[])))
 {
-    import std.file : slurp, exists, isFile;
     import std.algorithm.iteration : each;
 
-    if (fileName.exists && fileName.isFile)
+    map = (string[string]).init;
+    slurpFun!(string, string)(fileName, `"%s" = "%s"`).each!(pair => map[pair[0]] = pair[1]);
+}
+
+@safe unittest
+{
+    import std.typecons : Tuple, tuple;
+
+    static Tuple!(string, string)[] mockSlurpEmpty(Type1, Type2)(string filename, in char[] format)
     {
-        auto data = slurp!(string, string)(fileName, `"%s" = "%s"`);
-        map = (string[string]).init;
-        data.each!(pair => map[pair[0]] = pair[1]);
+        return [];
     }
-    else
+
+    loadSubstitutionFile!mockSlurpEmpty("");
+    assert(map.length == 0);
+
+    static Tuple!(string, string)[] mockSlurpEmptyEntry(Type1, Type2)(string filename,
+            in char[] format)
     {
-        map = (string[string]).init;
+        return [tuple("", "")];
     }
+
+    loadSubstitutionFile!mockSlurpEmptyEntry("");
+    assert("" in map);
+    assert(map.length == 1);
+    assert(map[""] == "");
+
+    static Tuple!(string, string)[] mockSlurpSingleEntry(Type1, Type2)(string filename,
+            in char[] format)
+    {
+        return [tuple("foo", "bar")];
+    }
+
+    loadSubstitutionFile!mockSlurpSingleEntry("");
+    assert("foo" in map);
+    assert(map.length == 1);
+    assert(map["foo"] == "bar");
+
+    static Tuple!(string, string)[] mockSlurpMultipleEntries(Type1, Type2)(
+            string filename, in char[] format)
+    {
+        return [tuple("", ""), tuple("0", "1"), tuple("Text in", "wird durch diesen ersetzt")];
+    }
+
+    loadSubstitutionFile!mockSlurpMultipleEntries("");
+    assert("" in map);
+    assert("0" in map);
+    assert("Text in" in map);
+    assert(map.length == 3);
+    assert(map[""] == "");
+    assert(map["0"] == "1");
+    assert(map["Text in"] == "wird durch diesen ersetzt");
 }
 
 auto substitute(string s) @safe nothrow

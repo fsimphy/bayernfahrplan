@@ -1,5 +1,6 @@
 import std.array : array, replace;
 import std.datetime : Clock;
+import std.file : exists, isFile;
 import std.format : format;
 import std.getopt : defaultGetoptPrinter, getopt;
 import std.json : JSONValue;
@@ -36,7 +37,10 @@ void main(string[] args)
              "type_dm" : "any",
              "itdLPxx_bcl" : "true"]);
 
-    loadSubstitutionFile(substitutionFileName);
+    if (substitutionFileName.exists && substitutionFileName.isFile)
+    {
+        loadSubstitutionFile(substitutionFileName);
+    }
 
     auto currentTime = Clock.currTime;
     JSONValue j = ["time" : "%02s:%02s".format(currentTime.hour, currentTime.minute)];
