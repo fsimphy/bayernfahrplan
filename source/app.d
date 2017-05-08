@@ -21,7 +21,7 @@ enum stopFinderRequest = "XML_STOPFINDER_REQUEST";
 void main(string[] args)
 {
     string fileName;
-    string busStop = "4014080";
+    string busStop = "Regensburg Universität";
     string substitutionFileName = "replacement.txt";
     // dfmt off
     auto helpInformation = getopt(args,
