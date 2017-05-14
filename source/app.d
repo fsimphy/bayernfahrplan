@@ -25,7 +25,7 @@ void main(string[] args)
 
     if (helpInformation.helpWanted)
     {
-        defaultGetoptPrinter("Usage: ./learncrypt [options]\n\n Options:", helpInformation.options);
+        defaultGetoptPrinter("Usage: bayernfahrplan [options]\n\n Options:", helpInformation.options);
         return;
     }
 

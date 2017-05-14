@@ -11,7 +11,7 @@ Usage
 -----
 
 ```
-Usage: ./learncrypt [options]
+Usage: bayernfahrplan [options]
 
  Options:
 -f             --file The file that the data is written to.
