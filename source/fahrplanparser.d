@@ -1,12 +1,10 @@
 module fahrplanparser;
 
-import std.algorithm : filter, map;
-import std.array : empty, front, replace;
+import std.algorithm : map;
+import std.array : front;
 import std.conv : to;
-import std.datetime : dur, TimeOfDay;
-import std.regex : ctRegex, matchAll;
-import std.string : strip;
-import std.typecons : tuple, Tuple;
+import std.datetime : dur, TimeOfDay, DateTimeException;
+import std.string : format;
 
 import kxml.xml : readDocument, XmlNode;
 
@@ -14,14 +12,19 @@ import substitution;
 
 private:
 
-enum ScheduleHeadings
+enum departureNodeName = "dp";
+enum timeNodeName = "t";
+enum realTimeNodeName = "rt";
+
+enum departuresXPath = "/efa/dps/" ~ departureNodeName;
+template timeXPath(string _timeNodeName = timeNodeName)
 {
-    date,
-    departure,
-    line,
-    direction,
-    platform
+    enum timeXPath = "/st/" ~ _timeNodeName;
 }
+
+enum useRealTimeXPath = "/realtime";
+enum lineXPath = "/m/nu";
+enum directionXPath = "/m/des";
 
 public:
 
@@ -29,132 +32,186 @@ auto parsedFahrplan(in string data)
 {
     // dfmt off
     return data.readDocument
-        .parseXPath(`//table[@id="departureMonitor"]/tbody/tr`)[1 .. $]
-        .getRowContents
-        .filter!(row => !row.empty)
-        .map!(a => ["departure" : a[0].parseTime[0].to!string[0 .. $ - 3],
-                    "delay" : a[0].parseTime[1].total!"minutes".to!string,
-                    "line" : a[1],
-                    "direction" : a[2].substitute]);
+        .parseXPath(departuresXPath)
+        .map!(dp => ["departure" : "%02s:%02s".format(dp.departureTime.hour, dp.departureTime.minute),
+                     "delay" : dp.delay.total!"minutes".to!string,
+                     "line": dp.parseXPath(lineXPath).front.getCData,
+                     "direction": dp.parseXPath(directionXPath).front.getCData.substitute]);
     // dfmt on
-}
-
-private:
-
-class BadTimeInputException : Exception
-{
-    this(string msg) @safe pure nothrow @nogc
-    {
-        super(msg);
-    }
-
-    this() @safe pure nothrow @nogc
-    {
-        this("");
-    }
-}
-
-auto parseTime(in string input) @safe
-{
-    auto matches = matchAll(input, ctRegex!(`(?P<hours>\d{1,2}):(?P<minutes>\d{2})`));
-    if (matches.empty)
-        throw new BadTimeInputException();
-    auto actualTime = TimeOfDay(matches.front["hours"].to!int, matches.front["minutes"].to!int);
-    matches.popFront;
-    if (!matches.empty)
-    {
-        auto expectedTime = TimeOfDay(matches.front["hours"].to!int,
-                matches.front["minutes"].to!int);
-        auto timeDiff = actualTime - expectedTime;
-
-        if (timeDiff < dur!"minutes"(0))
-            timeDiff = dur!"hours"(24) + timeDiff;
-
-        return tuple(expectedTime, timeDiff);
-    }
-    return tuple(actualTime, dur!"minutes"(0));
-}
-
-@safe unittest
-{
-    import std.exception : assertThrown;
-
-    assertThrown(parseTime(""));
-    assertThrown(parseTime("lkeqf"));
-    assertThrown(parseTime(":"));
-    assertThrown(parseTime("00:0"));
-
-    assert("00:00".parseTime == tuple(TimeOfDay(0, 0), dur!"minutes"(0)));
-    assert("0:00".parseTime == tuple(TimeOfDay(0, 0), dur!"minutes"(0)));
-
-    assert("00:00 00:00".parseTime == tuple(TimeOfDay(0, 0), dur!"minutes"(0)));
-
-    assert("00:00 00:00 12:00".parseTime == tuple(TimeOfDay(0, 0), dur!"minutes"(0)));
-
-    assert("12:3412:34".parseTime == tuple(TimeOfDay(12, 34), dur!"minutes"(0)));
-
-    assert("ölqjfo12:34oieqf12:31ölqjf".parseTime == tuple(TimeOfDay(12, 31), dur!"minutes"(3)));
-
-    assert("17:53 (planmäßig 17:51 Uhr)".parseTime == tuple(TimeOfDay(17, 51), dur!"minutes"(2)));
-
-    assert("00:00 23:59".parseTime == tuple(TimeOfDay(23, 59), dur!"minutes"(1)));
-}
-
-auto getRowContents(XmlNode[] rows)
-{
-    return rows.map!(x => getRowContent(x));
-}
-
-auto getRowContent(XmlNode row)
-{
-    return row.parseXPath("//td")[ScheduleHeadings.departure .. ScheduleHeadings.direction + 1].map!(
-            cell => stripLinks(cell));
-}
-
-auto stripLinks(XmlNode cell)
-{
-    auto links = cell.parseXPath("//a");
-    if (links.empty)
-    {
-        return cell.getCData;
-    }
-    else
-    {
-        return links.front.getCData.replace("...", "");
-    }
 }
 
 @system unittest
 {
-    auto foo = new XmlNode("foo");
-    assert(foo.stripLinks == "");
+    import std.array : array;
 
-    auto link = new XmlNode("a");
-    link.setCData("test");
-    foo.addChild(link);
-    assert(foo.stripLinks == "test");
+    auto xml = "";
+    assert(xml.parsedFahrplan.array == []);
 
-    link.setCData("test2...");
-    assert(foo.stripLinks == "test2");
+    xml = "<efa><dps></dps></efa>";
+    assert(xml.parsedFahrplan.array == []);
 
-    auto bar = new XmlNode("bar");
-    bar.setCData("test3");
-    assert(bar.stripLinks == "test3");
+    xml = "<efa><dps><dp><realtime>1</realtime><st><t>1224</t><rt>1242</rt></st><m><nu>6</nu><des>Wernerwerkstraße</des></m></dp></dps></efa>";
+    assert(xml.parsedFahrplan.array == [["direction" : "Wernerwerkstraße",
+            "line" : "6", "departure" : "12:24", "delay" : "18"]]);
 
-    bar.addChild(link);
-    assert(bar.stripLinks == "test2");
+    xml = "<efa><dps><dp><realtime>0</realtime><st><t>1224</t></st><m><nu>6</nu><des>Wernerwerkstraße</des></m></dp></dps></efa>";
+    assert(xml.parsedFahrplan.array == [["direction" : "Wernerwerkstraße",
+            "line" : "6", "departure" : "12:24", "delay" : "0"]]);
 
-    auto baz = new XmlNode("baz");
-    auto subNode = new XmlNode("subNode");
-    baz.addChild(subNode);
-    assert(baz.stripLinks == "");
+    xml = "<efa><dps><dp><realtime>0</realtime><st><t>1224</t></st><m><nu>6</nu><des>Wernerwerkstraße</des></m></dp><dp><realtime>1</realtime><st><t>1353</t><rt>1356</rt></st><m><nu>11</nu><des>Burgweinting</des></m></dp></dps></efa>";
+    assert(xml.parsedFahrplan.array == [["direction" : "Wernerwerkstraße", "line" : "6",
+            "departure" : "12:24", "delay" : "0"], ["direction" : "Burgweinting",
+            "line" : "11", "departure" : "13:53", "delay" : "3"]]);
+}
 
-    baz.addChild(link);
-    assert(baz.stripLinks == "test2");
+private:
 
-    baz.addCData("test4");
-    assert(baz.stripLinks == "test2");
+class UnexpectedValueException(T) : Exception
+{
+    this(T t, string node) @safe pure
+    {
+        super(`Unexpected value "%s" for node "%s"`.format(t, node));
+    }
+}
 
-    baz.removeChild(link);
-    assert(baz.stripLinks == "test4");
+auto departureTime(string _timeNodeName = timeNodeName)(XmlNode dp)
+in
+{
+    assert(dp.getName == departureNodeName);
+}
+body
+{
+    return TimeOfDay.fromISOString(dp.parseXPath(timeXPath!_timeNodeName).front.getCData ~ "00");
+}
+
+@system unittest
+{
+    import std.exception : assertThrown;
+
+    auto xml = "<dp><st><t>0000</t></st></dp>".readDocument.parseXPath("/dp").front;
+    assert(xml.departureTime == TimeOfDay(0, 0));
+
+    xml = "<dp><st><t>0013</t></st></dp>".readDocument.parseXPath("/dp").front;
+    assert(xml.departureTime == TimeOfDay(0, 13));
+
+    xml = "<dp><st><t>1100</t></st></dp>".readDocument.parseXPath("/dp").front;
+    assert(xml.departureTime == TimeOfDay(11, 00));
+
+    xml = "<dp><st><t>1242</t></st></dp>".readDocument.parseXPath("/dp").front;
+    assert(xml.departureTime == TimeOfDay(12, 42));
+
+    xml = "<dp><st><t>2359</t></st></dp>".readDocument.parseXPath("/dp").front;
+    assert(xml.departureTime == TimeOfDay(23, 59));
+
+    assertThrown!DateTimeException("<dp><st><t>2400</t></st></dp>".readDocument.parseXPath("/dp")
+            .front.departureTime);
+    assertThrown!DateTimeException("<dp><st><t>0061</t></st></dp>".readDocument.parseXPath("/dp")
+            .front.departureTime);
+    assertThrown!DateTimeException("<dp><st><t>2567</t></st></dp>".readDocument.parseXPath("/dp")
+            .front.departureTime);
+    assertThrown!DateTimeException("<dp><st><t></t></st></dp>".readDocument.parseXPath("/dp")
+            .front.departureTime);
+    assertThrown!DateTimeException("<dp><st><t>0</t></st></dp>".readDocument.parseXPath("/dp")
+            .front.departureTime);
+    assertThrown!DateTimeException("<dp><st><t>00</t></st></dp>".readDocument.parseXPath("/dp")
+            .front.departureTime);
+    assertThrown!DateTimeException("<dp><st><t>000000</t></st></dp>".readDocument.parseXPath("/dp")
+            .front.departureTime);
+    assertThrown!DateTimeException("<dp><st><t>00:00</t></st></dp>".readDocument.parseXPath("/dp")
+            .front.departureTime);
+    assertThrown!DateTimeException("<dp><st><t>abcd</t></st></dp>".readDocument.parseXPath("/dp")
+            .front.departureTime);
+}
+
+auto delay(XmlNode dp)
+in
+{
+    assert(dp.getName == departureNodeName);
+}
+body
+{
+    immutable useRealtimeString = dp.parseXPath(useRealTimeXPath).front.getCData;
+    if (useRealtimeString == "0")
+        return dur!"minutes"(0);
+    else if (useRealtimeString == "1")
+    {
+        immutable expectedTime = dp.departureTime;
+        immutable realTime = dp.departureTime!realTimeNodeName;
+        auto timeDiff = realTime - expectedTime;
+        if (timeDiff < dur!"minutes"(0))
+            timeDiff = dur!"hours"(24) + timeDiff;
+        return timeDiff;
+    }
+    else
+        throw new UnexpectedValueException!string(useRealtimeString, "realtime");
+}
+
+@system unittest
+{
+    import std.exception : assertThrown;
+    import core.exception : AssertError;
+
+    auto xml = "<dp><realtime>0</realtime></dp>".readDocument.parseXPath("/dp").front;
+    assert(xml.delay == dur!"minutes"(0));
+
+    xml = "<dp><realtime></realtime></dp>".readDocument.parseXPath("/dp").front;
+    assertThrown!(UnexpectedValueException!string)(xml.delay);
+
+    xml = "<dp><realtime>2</realtime></dp>".readDocument.parseXPath("/dp").front;
+    assertThrown!(UnexpectedValueException!string)(xml.delay);
+
+    xml = "<dp><realtime>a</realtime></dp>".readDocument.parseXPath("/dp").front;
+    assertThrown!(UnexpectedValueException!string)(xml.delay);
+
+    xml = "<dp><realtime>1</realtime></dp>".readDocument.parseXPath("/dp").front;
+    assertThrown!AssertError(xml.delay);
+
+    xml = "<dp><realtime>1</realtime><st><t></t></st></dp>".readDocument.parseXPath("/dp").front;
+    assertThrown!DateTimeException(xml.delay);
+
+    xml = "<dp><realtime>1</realtime><st><rt></rt></st></dp>".readDocument.parseXPath("/dp").front;
+    assertThrown!AssertError(xml.delay);
+
+    xml = "<dp><st><rt></rt><t></t></st></dp>".readDocument.parseXPath("/dp").front;
+    assertThrown!AssertError(xml.delay);
+
+    xml = "<dp><realtime>1</realtime><st><rt></rt><t></t></st></dp>".readDocument.parseXPath("/dp")
+        .front;
+    assertThrown!DateTimeException(xml.delay);
+
+    xml = "<dp><realtime>1</realtime><st><rt>0000</rt><t></t></st></dp>".readDocument.parseXPath("/dp")
+        .front;
+    assertThrown!DateTimeException(xml.delay);
+
+    xml = "<dp><realtime>1</realtime><st><rt></rt><t>0000</t></st></dp>".readDocument.parseXPath("/dp")
+        .front;
+    assertThrown!DateTimeException(xml.delay);
+
+    xml = "<dp><realtime>1</realtime><st><rt>0000</rt><t>0000</t></st></dp>"
+        .readDocument.parseXPath("/dp").front;
+    assert(xml.delay == dur!"minutes"(0));
+
+    xml = "<dp><realtime>1</realtime><st><rt>0001</rt><t>0000</t></st></dp>"
+        .readDocument.parseXPath("/dp").front;
+    assert(xml.delay == dur!"minutes"(1));
+
+    xml = "<dp><realtime>1</realtime><st><rt>1753</rt><t>1751</t></st></dp>"
+        .readDocument.parseXPath("/dp").front;
+    assert(xml.delay == dur!"minutes"(2));
+
+    xml = "<dp><realtime>1</realtime><st><rt>1010</rt><t>1000</t></st></dp>"
+        .readDocument.parseXPath("/dp").front;
+    assert(xml.delay == dur!"minutes"(10));
+
+    xml = "<dp><realtime>1</realtime><st><rt>1301</rt><t>1242</t></st></dp>"
+        .readDocument.parseXPath("/dp").front;
+    assert(xml.delay == dur!"minutes"(19));
+
+    xml = "<dp><realtime>1</realtime><st><rt>0000</rt><t>1242</t></st></dp>"
+        .readDocument.parseXPath("/dp").front;
+    assert(xml.delay == dur!"minutes"(678));
+
+    xml = "<dp><realtime>1</realtime><st><rt>0000</rt><t>2359</t></st></dp>"
+        .readDocument.parseXPath("/dp").front;
+    assert(xml.delay == dur!"minutes"(1));
 }
