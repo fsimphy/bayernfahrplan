@@ -21,6 +21,7 @@ template timeXPath(string _timeNodeName = timeNodeName)
 {
     enum timeXPath = "/st/" ~ _timeNodeName;
 }
+
 enum useRealTimeXPath = "/realtime";
 enum lineXPath = "/m/nu";
 enum directionXPath = "/m/des";
@@ -41,8 +42,8 @@ auto parsedFahrplan(in string data)
 
 @system unittest
 {
-    import std.stdio;
-    import std.array: array;
+    import std.array : array;
+
     auto xml = "";
     assert(xml.parsedFahrplan.array == []);
 
@@ -50,13 +51,17 @@ auto parsedFahrplan(in string data)
     assert(xml.parsedFahrplan.array == []);
 
     xml = "<efa><dps><dp><realtime>1</realtime><st><t>1224</t><rt>1242</rt></st><m><nu>6</nu><des>Wernerwerkstraße</des></m></dp></dps></efa>";
-    assert(xml.parsedFahrplan.array == [["direction":"Wernerwerkstraße", "line":"6", "departure":"12:24", "delay":"18"]]);
+    assert(xml.parsedFahrplan.array == [["direction" : "Wernerwerkstraße",
+            "line" : "6", "departure" : "12:24", "delay" : "18"]]);
 
     xml = "<efa><dps><dp><realtime>0</realtime><st><t>1224</t></st><m><nu>6</nu><des>Wernerwerkstraße</des></m></dp></dps></efa>";
-    assert(xml.parsedFahrplan.array == [["direction":"Wernerwerkstraße", "line":"6", "departure":"12:24", "delay":"0"]]);
+    assert(xml.parsedFahrplan.array == [["direction" : "Wernerwerkstraße",
+            "line" : "6", "departure" : "12:24", "delay" : "0"]]);
 
     xml = "<efa><dps><dp><realtime>0</realtime><st><t>1224</t></st><m><nu>6</nu><des>Wernerwerkstraße</des></m></dp><dp><realtime>1</realtime><st><t>1353</t><rt>1356</rt></st><m><nu>11</nu><des>Burgweinting</des></m></dp></dps></efa>";
-    assert(xml.parsedFahrplan.array == [["direction":"Wernerwerkstraße", "line":"6", "departure":"12:24", "delay":"0"], ["direction":"Burgweinting", "line":"11", "departure":"13:53", "delay":"3"]]);
+    assert(xml.parsedFahrplan.array == [["direction" : "Wernerwerkstraße", "line" : "6",
+            "departure" : "12:24", "delay" : "0"], ["direction" : "Burgweinting",
+            "line" : "11", "departure" : "13:53", "delay" : "3"]]);
 }
 
 private:
@@ -125,13 +130,13 @@ in
 }
 body
 {
-    auto useRealtimeString = dp.parseXPath(useRealTimeXPath).front.getCData;
+    immutable useRealtimeString = dp.parseXPath(useRealTimeXPath).front.getCData;
     if (useRealtimeString == "0")
         return dur!"minutes"(0);
     else if (useRealtimeString == "1")
     {
-        auto expectedTime = dp.departureTime;
-        auto realTime = dp.departureTime!realTimeNodeName;
+        immutable expectedTime = dp.departureTime;
+        immutable realTime = dp.departureTime!realTimeNodeName;
         auto timeDiff = realTime - expectedTime;
         if (timeDiff < dur!"minutes"(0))
             timeDiff = dur!"hours"(24) + timeDiff;

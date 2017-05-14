@@ -12,11 +12,8 @@ import fahrplanparser;
 
 import substitution;
 
-// find stops: http://mobile.defas-fgi.de/beg/XML_STOPFINDER_REQUEST?outputFormat=XML&stateless=1&locationServerActive=1&regionID_sf=1&type_sf=stop&name_sf=Regensburg%20Universit%C3%A4t
-
 enum baseURL = "http://mobile.defas-fgi.de/beg/";
 enum departureMonitorRequest = "XML_DM_REQUEST";
-enum stopFinderRequest = "XML_STOPFINDER_REQUEST";
 
 void main(string[] args)
 {
