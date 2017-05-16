@@ -6,6 +6,10 @@ import std.traits : Parameters;
 
 public:
 
+/***********************************
+* Loads a substitution dictonary from a file.
+*/
+
 void loadSubstitutionFile(alias slurpFun = slurp)(string fileName)
         if (is(Parameters!(slurpFun!(string, string)) == AliasSeq!(string, const char[])))
 {
@@ -15,6 +19,7 @@ void loadSubstitutionFile(alias slurpFun = slurp)(string fileName)
     slurpFun!(string, string)(fileName, `"%s" = "%s"`).each!(pair => map[pair[0]] = pair[1]);
 }
 
+///
 @safe unittest
 {
     import std.typecons : Tuple, tuple;
@@ -65,11 +70,17 @@ void loadSubstitutionFile(alias slurpFun = slurp)(string fileName)
     assert(map["Text in"] == "wird durch diesen ersetzt");
 }
 
+/***********************************
+* Substitutes a string with its corresponding replacement, if one is available.
+* Otherwise just returns the original string.
+*/
+
 auto substitute(string s) @safe nothrow
 {
     return s in map ? map[s] : s;
 }
 
+///
 @safe unittest
 {
     map[""] = "";

@@ -28,6 +28,11 @@ enum directionXPath = "/m/des";
 
 public:
 
+/***********************************
+* Parses the departure monitor data and returns it as an associative array.
+* data is expected to contain valid XML as returned by queries sent to http://mobile.defas-fgi.de/beg/.
+*/
+
 auto parsedFahrplan(in string data)
 {
     // dfmt off
@@ -40,6 +45,7 @@ auto parsedFahrplan(in string data)
     // dfmt on
 }
 
+///
 @system unittest
 {
     import std.array : array;
