@@ -1,7 +1,7 @@
 module fahrplanparser;
 
 import std.algorithm : map;
-import std.array : front;
+import std.array : empty, front;
 import std.conv : to;
 import std.datetime : dur, TimeOfDay, DateTimeException;
 import std.string : format;
@@ -74,6 +74,14 @@ class UnexpectedValueException(T) : Exception
     }
 }
 
+class CouldNotFindeNodeException : Exception
+{
+    this(string node) @safe pure
+    {
+        super(`Could not find node "%s"`.format(node));
+    }
+}
+
 auto departureTime(string _timeNodeName = timeNodeName)(XmlNode dp)
 in
 {
@@ -81,7 +89,11 @@ in
 }
 body
 {
-    return TimeOfDay.fromISOString(dp.parseXPath(timeXPath!_timeNodeName).front.getCData ~ "00");
+    auto timeNodes = dp.parseXPath(timeXPath!_timeNodeName);
+    if(timeNodes.empty)
+        throw new CouldNotFindeNodeException(_timeNodeName);
+
+    return TimeOfDay.fromISOString(timeNodes.front.getCData ~ "00");
 }
 
 @system unittest
@@ -135,12 +147,19 @@ body
         return dur!"minutes"(0);
     else if (useRealtimeString == "1")
     {
-        immutable expectedTime = dp.departureTime;
-        immutable realTime = dp.departureTime!realTimeNodeName;
-        auto timeDiff = realTime - expectedTime;
-        if (timeDiff < dur!"minutes"(0))
-            timeDiff = dur!"hours"(24) + timeDiff;
-        return timeDiff;
+        try
+        {
+            immutable expectedTime = dp.departureTime;
+            immutable realTime = dp.departureTime!realTimeNodeName;
+            auto timeDiff = realTime - expectedTime;
+            if (timeDiff < dur!"minutes"(0))
+                timeDiff = dur!"hours"(24) + timeDiff;
+            return timeDiff;
+        }
+        catch (CouldNotFindeNodeException e)
+        {
+            return dur!"minutes"(0);
+        }
     }
     else
         throw new UnexpectedValueException!string(useRealtimeString, "realtime");
