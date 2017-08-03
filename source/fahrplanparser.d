@@ -96,7 +96,7 @@ in
 body
 {
     auto timeNodes = dp.parseXPath(timeXPath!_timeNodeName);
-    if(timeNodes.empty)
+    if (timeNodes.empty)
         throw new CouldNotFindeNodeException(_timeNodeName);
 
     return TimeOfDay.fromISOString(timeNodes.front.getCData ~ "00");
@@ -189,13 +189,13 @@ body
     assertThrown!(UnexpectedValueException!string)(xml.delay);
 
     xml = "<dp><realtime>1</realtime></dp>".readDocument.parseXPath("/dp").front;
-    assertThrown!AssertError(xml.delay);
+    assert(xml.delay == dur!"seconds"(0));
 
     xml = "<dp><realtime>1</realtime><st><t></t></st></dp>".readDocument.parseXPath("/dp").front;
     assertThrown!DateTimeException(xml.delay);
 
     xml = "<dp><realtime>1</realtime><st><rt></rt></st></dp>".readDocument.parseXPath("/dp").front;
-    assertThrown!AssertError(xml.delay);
+    assert(xml.delay == dur!"seconds"(0));
 
     xml = "<dp><st><rt></rt><t></t></st></dp>".readDocument.parseXPath("/dp").front;
     assertThrown!AssertError(xml.delay);
