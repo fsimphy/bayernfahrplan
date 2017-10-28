@@ -1,0 +1,19 @@
+image: base/devel
+
+before_script:
+  - pacman -Sy
+  - pacman --noconfirm -S ldc dub libevent
+
+stages:
+  - build
+  - test
+
+build:
+  stage: build
+  script:
+    - dub build --compiler=ldc2
+
+test:
+  stage: test
+  script:
+    - dub test --compiler=ldc2
