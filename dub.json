@@ -5,7 +5,7 @@
 		"Oliver Rümpelein"
 	],
 	"dependencies": {
-		"requests": "~>0.5.0",
+		"requests": "0.5.3",
 		"kxml": "~>1.0.1"
 	},
 	"description": "A minimal D application.",

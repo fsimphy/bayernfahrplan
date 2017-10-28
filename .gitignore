@@ -1,1 +1,4 @@
-/bayernfahrplan
+bayernfahrplan*
+.dub/*
+replacement.txt
+dub.selections.json
