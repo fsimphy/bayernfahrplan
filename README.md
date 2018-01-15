@@ -2,7 +2,7 @@ bayernfahrplan
 ==============
 
 A JSON-fetcher for bus departues in bavaria written in D 
----------------------------------------------
+--------------------------------------------------------
 
 bayernfahrplan is a tool wich lets you fetch bus departures in bavaria and
 output them as JSON.
