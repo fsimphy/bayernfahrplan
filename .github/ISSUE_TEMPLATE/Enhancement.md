@@ -1,16 +1,11 @@
-## Summary ##
+## Summary
 
-(max 60 words)
+(max. 60 words)
 
-## Basic information ##
+## Description
 
- - Component:
- - New node needed: (Yes/No)
+As a <role>, I want to <what?>, so that <what?>.
 
-## Description ##
-
-As a <role>, I want to <what?>
-
-## Acceptance criteria ##
+## Acceptance criteria
 
 (How should this be in the end?)

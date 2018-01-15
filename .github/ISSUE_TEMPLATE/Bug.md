@@ -1,25 +1,22 @@
-Please add the following, if applicable, remove otherwise:
+## Summary
 
-## Summary ##
+(up to 60 words)
 
-(max. 60 words)
+## Expected behaviour
 
-## Basic information ##
+## Actual behaviour
+
+## Steps to reproduce
+
+1. …
+2. …
+3. …
+
+## Specifications
 
  - Version:
- - Component:
- - Platform: (RasPi, x86_64, i686)
+ - Platform:
 
-## Description ##
-
-### Expected behaviour ###
-
-### Actual behaviour ###
-
-### Reproduction steps ##
-
-(Please attach files if necessary)
-
-## Other things to be mentioned ##
+## Other things to be mentioned
 
 (Ideas for fixing, requests for comments, …)

@@ -1,4 +1,4 @@
-As mentioned in <Merge Request Reference>, this implements <What?>.
+As mentioned in <issue>, this implements <what?>.
 
 This includes the following changes:
  - …
