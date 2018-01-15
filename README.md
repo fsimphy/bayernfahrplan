@@ -1,11 +1,11 @@
 bayernfahrplan
 ==============
 
-A JSON-Getter written in D for bayernfahrplan
+A JSON-fetcher for bus departues in bavaria written in D 
 ---------------------------------------------
 
-bayernfahrplan is a tool wich lets you fetch departure tables from
-bayernfahrplan.de and output them as JSON.
+bayernfahrplan is a tool wich lets you fetch bus departures in bavaria and
+output them as JSON.
 
 Usage
 -----
