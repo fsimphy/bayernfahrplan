@@ -1,0 +1,15 @@
+
+language: d
+
+d:
+    - dmd-2.077.1
+    - ldc-1.7.0
+os:
+    - linux
+
+before_install:
+    - sudo apt-get install -y libevent-dev
+
+script:
+- dub build
+- dub test
