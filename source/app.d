@@ -12,24 +12,37 @@ import fahrplanparser;
 
 import substitution;
 
+enum ver ="v0.1.0";
+enum programName = "bayernfahrplan";
+
 enum baseURL = "http://mobile.defas-fgi.de/beg/";
 enum departureMonitorRequest = "XML_DM_REQUEST";
+
 
 void main(string[] args)
 {
     string fileName;
     string busStop = "Regensburg Universität";
     string substitutionFileName = "replacement.txt";
+    bool versionWanted;
     // dfmt off
     auto helpInformation = getopt(args,
         "file|f", "The file that the data is written to.", &fileName,
         "stop|s", "The bus stop for which to fetch data.", &busStop,
-        "replacement-file|r", "The file that contais the direction name replacement info.", &substitutionFileName);
+        "replacement-file|r", "The file that contais the direction name replacement info.", &substitutionFileName,
+        "version|v", "Display the version of this program.", &versionWanted);
     // dfmt on
 
     if (helpInformation.helpWanted)
     {
         defaultGetoptPrinter("Usage: bayernfahrplan [options]\n\n Options:", helpInformation.options);
+        return;
+    }
+
+    if(versionWanted)
+    {
+        import std.stdio: writeln;
+        writeln(programName, " ", ver);
         return;
     }
 
