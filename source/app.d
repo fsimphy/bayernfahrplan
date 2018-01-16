@@ -12,7 +12,7 @@ import fahrplanparser;
 
 import substitution;
 
-enum ver ="v0.1.0";
+enum ver ="v0.1.1";
 enum programName = "bayernfahrplan";
 
 enum baseURL = "http://mobile.defas-fgi.de/beg/";
