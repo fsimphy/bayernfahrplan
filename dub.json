@@ -6,7 +6,7 @@
 	],
 	"dependencies": {
 		"requests": "0.6.0",
-		"kxml": "~>1.0.1"
+		"std-experimental-xml": "~>0.1.5"
 	},
 	"description": "A minimal D application.",
 	"copyright": "Copyright © 2018, Johannes Loher",

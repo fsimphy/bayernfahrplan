@@ -68,7 +68,6 @@ void main(string[] args)
 
     auto currentTime = Clock.currTime;
     JSONValue j = ["time" : "%02s:%02s".format(currentTime.hour, currentTime.minute)];
-
     j.object["departures"] = (cast(string) content.data).parsedFahrplan.array.JSONValue;
     auto output = j.toPrettyString.replace("\\/", "/");
     if (fileName !is null)
