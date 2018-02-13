@@ -2,7 +2,7 @@
 language: d
 
 d:
-    - dmd-2.077.1
+    - dmd-2.078.2
 os:
     - linux
 
