@@ -1,21 +1,18 @@
 module fahrplanparser;
 
+import dxml.dom : DOMEntity, parseDOM;
+import dxml.parser : simpleXML;
+import dxml.util : normalize;
+
+import fluent.asserts;
+
 import std.algorithm : map, joiner, filter;
 import std.array : empty, front;
 import std.conv : to;
 import std.datetime : dur, TimeOfDay, DateTimeException;
 import std.string : format;
 
-import dxml.dom;
-import dxml.util : normalize;
-import dxml.parser : XMLParsingException;
-
-version (unittest)
-{
-    import fluent.asserts;
-}
-
-import substitution;
+import substitution : substitute;
 
 private:
 
@@ -39,7 +36,7 @@ public:
 
 auto parsedFahrplan(string data)
 {
-    return data.parseDOM!simpleXML.children.filter!(node => node.name == efaNodeName)
+    return data.parseDOM.children.filter!(node => node.name == efaNodeName)
         .map!(efa => efa.children).joiner.filter!(node => node.name == departuresNodeName)
         .map!(dps => dps.children).joiner.filter!(node => node.name == departureNodeName)
         .map!(dp => ["line" : dp.children.filter!(node => node.name == busNodeName)
@@ -56,80 +53,90 @@ auto parsedFahrplan(string data)
 ///
 @system unittest
 {
-    `
-    <?xml version="1.0" encoding="UTF-8"?>
-    <efa>
-        <dps></dps>
-    </efa>
-    `.parsedFahrplan.empty.should.equal(true);
+    (// dfmt off
+    "<?xml version='1.0' encoding='UTF-8'?>\n" ~
+    "<efa>\n" ~
+    "    <dps></dps>\n" ~
+    "</efa>"
+    // dfmt on
+    ).parsedFahrplan.empty.should.equal(true);
 
-    `
-    <?xml version="1.0" encoding="UTF-8"?>
-    <efa>
-        <dps>
-            <dp>
-                <realtime>1</realtime>
-                <st>
-                    <t>1224</t>
-                    <rt>1242</rt>
-                </st>
-                <m>
-                    <nu>6</nu>
-                    <des>Wernerwerkstraße</des>
-                </m>
-            </dp>
-        </dps>
-    </efa>
-    `.parsedFahrplan.should.containOnly([["direction" : "Wernerwerkstraße",
+    (// dfmt off
+    "<?xml version='1.0' encoding='UTF-8'?>\n" ~
+    "<efa>\n" ~
+    "    <dps>\n" ~
+    "          <dp>\n" ~
+    "            <realtime>1</realtime>\n" ~
+    "            <st>\n" ~
+    "                <t>1224</t>\n" ~
+    "                <rt>1242</rt>\n" ~
+    "            </st>\n" ~
+    "            <m>\n" ~
+    "                <nu>6</nu>\n" ~
+    "                <des>Wernerwerkstraße</des>\n" ~
+    "            </m>\n" ~
+    "        </dp>\n" ~
+    "    </dps>\n" ~
+    "</efa>"
+    //dfmt on
+    ).parsedFahrplan.should.containOnly([["direction" : "Wernerwerkstraße",
             "line" : "6", "departure" : "12:24", "delay" : "18"]]);
+}
 
-    `
-    <?xml version="1.0" encoding="UTF-8"?>
-    <efa>
-        <dps>
-            <dp>
-                <realtime>0</realtime>
-                <st>
-                    <t>1224</t>
-                </st>
-                <m>
-                    <nu>6</nu>
-                    <des>Wernerwerkstraße</des>
-                </m>
-            </dp>
-        </dps>
-    </efa>
-    `.parsedFahrplan.should.containOnly([["direction" : "Wernerwerkstraße",
+@system unittest
+{
+    (//dfmt off
+    "<?xml version='1.0' encoding='UTF-8'?>\n" ~
+    "<efa>\n" ~
+    "    <dps>\n" ~
+    "          <dp>\n" ~
+    "            <realtime>0</realtime>\n" ~
+    "            <st>\n" ~
+    "                <t>1224</t>\n" ~
+    "            </st>\n" ~
+    "            <m>\n" ~
+    "                <nu>6</nu>\n" ~
+    "                <des>Wernerwerkstraße</des>\n" ~
+    "            </m>\n" ~
+    "        </dp>\n" ~
+    "    </dps>\n" ~
+    "</efa>"
+    // dfmt on
+    ).parsedFahrplan.should.containOnly([["direction" : "Wernerwerkstraße",
             "line" : "6", "departure" : "12:24", "delay" : "0"]]);
+}
 
-    `
-    <?xml version="1.0" encoding="UTF-8"?>
-    <efa>
-        <dps>
-            <dp>
-                <realtime>0</realtime>
-                <st>
-                    <t>1224</t>
-                </st>
-                <m>
-                    <nu>6</nu>
-                    <des>Wernerwerkstraße</des>
-                </m>
-            </dp>
-            <dp>
-                <realtime>1</realtime>
-                <st>
-                    <t>1353</t>
-                    <rt>1356</rt>
-                </st>
-                <m>
-                    <nu>11</nu>
-                    <des>Burgweinting</des>
-                </m>
-            </dp>
-        </dps>
-    </efa>
-    `.parsedFahrplan.should.containOnly([["direction" : "Wernerwerkstraße", "line" : "6",
+@system unittest
+{
+    (//dfmt off
+    "<?xml version='1.0' encoding='UTF-8'?>\n" ~
+    "<efa>\n" ~
+    "    <dps>\n" ~
+    "          <dp>\n" ~
+    "            <realtime>0</realtime>\n" ~
+    "            <st>\n" ~
+    "                <t>1224</t>\n" ~
+    "            </st>\n" ~
+    "            <m>\n" ~
+    "                <nu>6</nu>\n" ~
+    "                <des>Wernerwerkstraße</des>\n" ~
+    "            </m>\n" ~
+    "        </dp>\n" ~
+    "          <dp>\n" ~
+    "            <realtime>1</realtime>\n" ~
+    "            <st>\n" ~
+    "                <t>1353</t>\n" ~
+    "                <rt>1356</rt>\n" ~
+    "            </st>\n" ~
+    "            <m>\n" ~
+    "                <nu>11</nu>\n" ~
+    "                <des>Burgweinting</des>\n" ~
+    "            </m>\n" ~
+    "        </dp>\n" ~
+    "    </dps>\n" ~
+    "</efa>"
+    // dfmt on
+    ).parsedFahrplan.should.containOnly([["direction" : "Wernerwerkstraße", "line" : "6",
             "departure" : "12:24", "delay" : "0"], ["direction" : "Burgweinting",
             "line" : "11", "departure" : "13:53", "delay" : "3"]]);
 }
@@ -144,14 +151,6 @@ class UnexpectedValueException(T) : Exception
     }
 }
 
-class CouldNotFindNodeException : Exception
-{
-    this(string node) @safe pure
-    {
-        super(`Could not find node "%s"`.format(node));
-    }
-}
-
 class CouldNotFindNodeWithContentException : Exception
 {
     this(string node) @safe pure
@@ -160,16 +159,13 @@ class CouldNotFindNodeWithContentException : Exception
     }
 }
 
-auto departureTime(string _timeNodeName = timeNodeName, T)(T dp)
+auto departureTime(string _timeNodeName = timeNodeName)(DOMEntity!string dp)
 in
 {
     assert(dp.name == departureNodeName);
 }
 body
 {
-    import std.stdio : writeln;
-    import std.traits : fullyQualifiedName;
-
     auto timeNodes = dp.children.filter!(node => node.name == isoTimeNodeName)
         .map!(ISOTimeNode => ISOTimeNode.children.filter!(node => node.name == _timeNodeName)).joiner.map!(
                 node => node.children).joiner;
@@ -182,147 +178,199 @@ body
 
 @system unittest
 {
-    `
-    <?xml version="1.0" encoding="UTF-8"?>
-    <dp>
-        <st>
-            <t>0000</t>
-        </st>
-    </dp>
-    `.parseDOM!simpleXML.children.filter!(node => node.name == departureNodeName)
+    (// dfmt off
+    "<?xml version='1.0' encoding='UTF-8'?>\n" ~
+    "<dp>\n" ~
+    "    <st>\n" ~
+    "        <t>0000</t>\n" ~
+    "    </st>\n" ~
+    "</dp>"
+    // dfmt on
+    ).parseDOM.children.filter!(node => node.name == departureNodeName)
         .front.departureTime.should.equal(TimeOfDay(0, 0));
+}
 
-    `
-    <?xml version="1.0" encoding="UTF-8"?>
-    <dp>
-        <st>
-            <t>0013</t>
-        </st>
-    </dp>
-    `.parseDOM!simpleXML.children.filter!(node => node.name == departureNodeName)
+@system unittest
+{
+    (// dfmt off
+    "<?xml version='1.0' encoding='UTF-8'?>\n" ~
+    "<dp>\n" ~
+    "    <st>\n" ~
+    "        <t>0013</t>\n" ~
+    "    </st>\n" ~
+    "</dp>"
+    // dfmt on
+    ).parseDOM.children.filter!(node => node.name == departureNodeName)
         .front.departureTime.should.equal(TimeOfDay(0, 13));
+}
 
-    `
-    <?xml version="1.0" encoding="UTF-8"?>
-    <dp>
-        <st>
-            <t>1100</t>
-        </st>
-    </dp>
-    `.parseDOM!simpleXML.children.filter!(node => node.name == departureNodeName)
+@system unittest
+{
+    (// dfmt off
+    "<?xml version='1.0' encoding='UTF-8'?>\n" ~
+    "<dp>\n" ~
+    "    <st>\n" ~
+    "        <t>1100</t>\n" ~
+    "    </st>\n" ~
+    "</dp>"
+    // dfmt on
+    ).parseDOM.children.filter!(node => node.name == departureNodeName)
         .front.departureTime.should.equal(TimeOfDay(11, 00));
+}
 
-    `
-    <?xml version="1.0" encoding="UTF-8"?>
-    <dp>
-        <st>
-            <t>1242</t>
-        </st>
-    </dp>
-    `.parseDOM!simpleXML.children.filter!(node => node.name == departureNodeName)
+@system unittest
+{
+    (// dfmt off
+    "<?xml version='1.0' encoding='UTF-8'?>\n" ~
+    "<dp>\n" ~
+    "    <st>\n" ~
+    "        <t>1242</t>\n" ~
+    "    </st>\n" ~
+    "</dp>"
+    // dfmt on
+    ).parseDOM.children.filter!(node => node.name == departureNodeName)
         .front.departureTime.should.equal(TimeOfDay(12, 42));
+}
 
-    `
-    <?xml version="1.0" encoding="UTF-8"?>
-    <dp>
-        <st>
-            <t>2359</t>
-        </st>
-    </dp>
-    `.parseDOM!simpleXML.children.filter!(node => node.name == departureNodeName)
+@system unittest
+{
+    (// dfmt off
+    "<?xml version='1.0' encoding='UTF-8'?>\n" ~
+    "<dp>\n" ~
+    "    <st>\n" ~
+    "        <t>2359</t>\n" ~
+    "    </st>\n" ~
+    "</dp>"
+    // dfmt on
+    ).parseDOM.children.filter!(node => node.name == departureNodeName)
         .front.departureTime.should.equal(TimeOfDay(23, 59));
+}
 
-    `
-    <?xml version="1.0" encoding="UTF-8"?>
-    <dp>
-        <st>
-            <t>2400</t>
-        </st>
-    </dp>`.parseDOM!simpleXML.children.filter!(node => node.name == departureNodeName)
-        .front.departureTime.should.throwException!DateTimeException;
-
-    `
-    <?xml version="1.0" encoding="UTF-8"?>
-    <dp>
-        <st>
-            <t>0061</t>
-        </st>
-    </dp>
-    `.parseDOM!simpleXML.children.filter!(node => node.name == departureNodeName)
-        .front.departureTime.should.throwException!DateTimeException;
-
-    `
-    <?xml version="1.0" encoding="UTF-8"?>
-    <dp>
-        <st>
-            <t>2567</t>
-        </st>
-    </dp>
-    `.parseDOM!simpleXML.children.filter!(node => node.name == departureNodeName)
-        .front.departureTime.should.throwException!DateTimeException;
-
-    `
-    <?xml version="1.0" encoding="UTF-8"?>
-    <dp>
-        <st>
-            <t></t>
-        </st>
-    </dp>
-    `.parseDOM!simpleXML.children.filter!(node => node.name == departureNodeName)
-        .front.departureTime.should.throwException!CouldNotFindNodeWithContentException;
-
-    `
-    <?xml version="1.0" encoding="UTF-8"?>
-    <dp>
-        <st>
-            <t>0</t>
-        </st>
-    </dp>
-    `.parseDOM!simpleXML.children.filter!(node => node.name == departureNodeName)
-        .front.departureTime.should.throwException!DateTimeException;
-
-    `
-    <?xml version="1.0" encoding="UTF-8"?>
-    <dp>
-        <st>
-            <t>00</t>
-        </st>
-    </dp>
-    `.parseDOM!simpleXML.children.filter!(node => node.name == departureNodeName)
-        .front.departureTime.should.throwException!DateTimeException;
-
-    `
-    <?xml version="1.0" encoding="UTF-8"?>
-    <dp>
-        <st>
-            <t>000000</t>
-        </st>
-    </dp>
-    `.parseDOM!simpleXML.children.filter!(node => node.name == departureNodeName)
-        .front.departureTime.should.throwException!DateTimeException;
-
-    `
-    <?xml version="1.0" encoding="UTF-8"?>
-    <dp>
-        <st>
-            <t>00:00</t>
-        </st>
-    </dp>
-    `.parseDOM!simpleXML.children.filter!(node => node.name == departureNodeName)
-        .front.departureTime.should.throwException!DateTimeException;
-
-    `
-    <?xml version="1.0" encoding="UTF-8"?>
-    <dp>
-        <st>
-            <t>abcd</t>
-        </st>
-    </dp>
-    `.parseDOM!simpleXML.children.filter!(node => node.name == departureNodeName)
+@system unittest
+{
+    (// dfmt off
+    "<?xml version='1.0' encoding='UTF-8'?>\n" ~
+    "<dp>\n" ~
+    "    <st>\n" ~
+    "        <t>2400</t>\n" ~
+    "    </st>\n" ~
+    "</dp>"// dfmt on
+    ).parseDOM.children.filter!(node => node.name == departureNodeName)
         .front.departureTime.should.throwException!DateTimeException;
 }
 
-auto delay(T)(T dp)
+@system unittest
+{
+    (// dfmt off
+    "<?xml version='1.0' encoding='UTF-8'?>\n" ~
+    "<dp>\n" ~
+    "    <st>\n" ~
+    "        <t>0061</t>\n" ~
+    "    </st>\n" ~
+    "</dp>"
+    // dfmt on
+    ).parseDOM.children.filter!(node => node.name == departureNodeName)
+        .front.departureTime.should.throwException!DateTimeException;
+}
+
+@system unittest
+{
+    (// dfmt off
+    "<?xml version='1.0' encoding='UTF-8'?>\n" ~
+    "<dp>\n" ~
+    "    <st>\n" ~
+    "        <t>2567</t>\n" ~
+    "    </st>\n" ~
+    "</dp>"
+    // dfmt on
+    ).parseDOM.children.filter!(node => node.name == departureNodeName)
+        .front.departureTime.should.throwException!DateTimeException;
+}
+
+@system unittest
+{
+    (// dfmt off
+    "<?xml version='1.0' encoding='UTF-8'?>\n" ~
+    "<dp>\n" ~
+    "    <st>\n" ~
+    "        <t></t>\n" ~
+    "    </st>\n" ~
+    "</dp>"
+    // dfmt on
+    ).parseDOM.children.filter!(node => node.name == departureNodeName)
+        .front.departureTime.should.throwException!CouldNotFindNodeWithContentException;
+}
+
+@system unittest
+{
+    (// dfmt off
+    "<?xml version='1.0' encoding='UTF-8'?>\n" ~
+    "<dp>\n" ~
+    "    <st>\n" ~
+    "        <t>0</t>\n" ~
+    "    </st>\n" ~
+    "</dp>"
+    // dfmt on
+    ).parseDOM.children.filter!(node => node.name == departureNodeName)
+        .front.departureTime.should.throwException!DateTimeException;
+}
+
+@system unittest
+{
+    (// dfmt off
+    "<?xml version='1.0' encoding='UTF-8'?>\n" ~
+    "<dp>\n" ~
+    "    <st>\n" ~
+    "        <t>00</t>\n" ~
+    "    </st>\n" ~
+    "</dp>"
+    // dfmt on
+    ).parseDOM.children.filter!(node => node.name == departureNodeName)
+        .front.departureTime.should.throwException!DateTimeException;
+}
+
+@system unittest
+{
+    (// dfmt off
+    "<?xml version='1.0' encoding='UTF-8'?>\n" ~
+    "<dp>\n" ~
+    "    <st>\n" ~
+    "        <t>000000</t>\n" ~
+    "    </st>\n" ~
+    "</dp>"
+    // dfmt on
+    ).parseDOM.children.filter!(node => node.name == departureNodeName)
+        .front.departureTime.should.throwException!DateTimeException;
+}
+
+@system unittest
+{
+    (// dfmt off
+    "<?xml version='1.0' encoding='UTF-8'?>\n" ~
+    "<dp>\n" ~
+    "    <st>\n" ~
+    "        <t>00:00</t>\n" ~
+    "    </st>\n" ~
+    "</dp>"
+    // dfmt on
+    ).parseDOM.children.filter!(node => node.name == departureNodeName)
+        .front.departureTime.should.throwException!DateTimeException;
+}
+
+@system unittest
+{
+    (// dfmt off
+    "<?xml version='1.0' encoding='UTF-8'?>\n" ~
+    "<dp>\n" ~
+    "    <st>\n" ~
+    "        <t>abcd</t>\n" ~
+    "    </st>\n" ~
+    "</dp>"
+    ).parseDOM.children.filter!(node => node.name == departureNodeName)
+        .front.departureTime.should.throwException!DateTimeException;
+}
+
+auto delay(DOMEntity!string dp)
 in
 {
     assert(dp.name == departureNodeName);
@@ -358,196 +406,265 @@ body
 
 @system unittest
 {
-    `
-    <?xml version="1.0" encoding="UTF-8"?>
-    <dp>
-        <realtime>0</realtime>
-    </dp>
-    `.parseDOM!simpleXML.children.filter!(node => node.name == departureNodeName)
+    (// dfmt off
+    "<?xml version='1.0' encoding='UTF-8'?>\n" ~
+    "<dp>\n" ~
+    "    <realtime>0</realtime>\n" ~
+    "</dp>"
+    // dfmt on
+    ).parseDOM.children.filter!(node => node.name == departureNodeName)
         .front.delay.should.equal(dur!"minutes"(0));
+}
 
-    `
-    <?xml version="1.0" encoding="UTF-8"?>
-    <dp>
-        <realtime></realtime>
-    </dp>
-    `.parseDOM!simpleXML.children.filter!(node => node.name == departureNodeName)
+@system unittest
+{
+    (// dfmt off
+    "<?xml version='1.0' encoding='UTF-8'?>\n" ~
+    "<dp>\n" ~
+    "    <realtime></realtime>\n" ~
+    "</dp>"
+    // dfmt on
+    ).parseDOM.children.filter!(node => node.name == departureNodeName)
         .front.delay.should.throwException!(CouldNotFindNodeWithContentException);
+}
 
-    `
-    <?xml version="1.0" encoding="UTF-8"?>
-    <dp>
-        <realtime>2</realtime>
-    </dp>
-    `.parseDOM!simpleXML.children.filter!(node => node.name == departureNodeName)
+@system unittest
+{
+    (// dfmt off
+    "<?xml version='1.0' encoding='UTF-8'?>\n" ~
+    "<dp>\n" ~
+    "    <realtime>2</realtime>\n" ~
+    "</dp>"
+    // dfmt on
+    ).parseDOM.children.filter!(node => node.name == departureNodeName)
         .front.delay.should.throwException!(UnexpectedValueException!string);
+}
 
-    `
-    <?xml version="1.0" encoding="UTF-8"?>
-    <dp>
-        <realtime>a</realtime>
-    </dp>
-    `.parseDOM!simpleXML.children.filter!(node => node.name == departureNodeName)
+@system unittest
+{
+    (// dfmt off
+    "<?xml version='1.0' encoding='UTF-8'?>\n" ~
+    "<dp>\n" ~
+    "    <realtime>a</realtime>\n" ~
+    "</dp>"
+    // dfmt on
+    ).parseDOM.children.filter!(node => node.name == departureNodeName)
         .front.delay.should.throwException!(UnexpectedValueException!string);
+}
 
-    `
-    <?xml version="1.0" encoding="UTF-8"?>
-    <dp>
-        <realtime>1</realtime>
-    </dp>
-    `.parseDOM!simpleXML.children.filter!(node => node.name == departureNodeName)
+@system unittest
+{
+    (// dfmt off
+    "<?xml version='1.0' encoding='UTF-8'?>\n" ~
+    "<dp>\n" ~
+    "    <realtime>1</realtime>\n" ~
+    "</dp>"
+    // dfmt on
+    ).parseDOM.children.filter!(node => node.name == departureNodeName)
         .front.delay.should.equal(dur!"minutes"(0));
+}
 
-    `
-    <?xml version="1.0" encoding="UTF-8"?>
-    <dp>
-        <realtime>1</realtime>
-        <st>
-            <t></t>
-        </st>
-    </dp>
-    `.parseDOM!simpleXML.children.filter!(node => node.name == departureNodeName)
+@system unittest
+{
+    (// dfmt off
+    "<?xml version='1.0' encoding='UTF-8'?>\n" ~
+    "<dp>\n" ~
+    "    <realtime>1</realtime>\n" ~
+    "    <st>\n" ~
+    "        <t></t>\n" ~
+    "    </st>\n" ~
+    "</dp>"
+    // dfmt on
+    ).parseDOM.children.filter!(node => node.name == departureNodeName)
         .front.delay.should.equal(dur!"minutes"(0));
+}
 
-    `
-    <?xml version="1.0" encoding="UTF-8"?>
-    <dp>
-        <realtime>1</realtime>
-        <st>
-            <rt></rt>
-        </st>
-    </dp>
-    `.parseDOM!simpleXML.children.filter!(node => node.name == departureNodeName)
+@system unittest
+{
+    (// dfmt off
+    "<?xml version='1.0' encoding='UTF-8'?>\n" ~
+    "<dp>\n" ~
+    "    <realtime>1</realtime>\n" ~
+    "    <st>\n" ~
+    "        <rt></rt>\n" ~
+    "    </st>\n" ~
+    "</dp>"
+    // dfmt on
+    ).parseDOM.children.filter!(node => node.name == departureNodeName)
         .front.delay.should.equal(dur!"minutes"(0));
+}
 
-    `
-    <?xml version="1.0" encoding="UTF-8"?>
-    <dp>
-        <st>
-            <rt></rt>
-            <t></t>
-        </st>
-    </dp>
-    `.parseDOM!simpleXML.children.filter!(node => node.name == departureNodeName)
+@system unittest
+{
+    (// dfmt off
+    "<?xml version='1.0' encoding='UTF-8'?>\n" ~
+    "<dp>\n" ~
+    "    <st>\n" ~
+    "        <rt></rt>\n" ~
+    "        <t></t>\n" ~
+    "    </st>\n" ~
+    "</dp>"
+    // dfmt on
+    ).parseDOM.children.filter!(node => node.name == departureNodeName)
         .front.delay.should.throwException!CouldNotFindNodeWithContentException;
+}
 
-    `
-    <?xml version="1.0" encoding="UTF-8"?>
-    <dp>
-        <realtime>1</realtime>
-        <st>
-            <rt></rt>
-            <t></t>
-        </st>
-    </dp>
-    `.parseDOM!simpleXML.children.filter!(node => node.name == departureNodeName)
+@system unittest
+{
+    (// dfmt off
+    "<?xml version='1.0' encoding='UTF-8'?>\n" ~
+    "<dp>\n" ~
+    "    <realtime>1</realtime>\n" ~
+    "    <st>\n" ~
+    "        <rt></rt>\n" ~
+    "        <t></t>\n" ~
+    "    </st>\n" ~
+    "</dp>"
+    // dfmt on
+    ).parseDOM.children.filter!(node => node.name == departureNodeName)
         .front.delay.should.equal(dur!"minutes"(0));
+}
 
-    `
-    <?xml version="1.0" encoding="UTF-8"?>
-    <dp>
-        <realtime>1</realtime>
-        <st>
-            <rt>0000</rt>
-            <t></t>
-        </st>
-    </dp>
-    `.parseDOM!simpleXML.children.filter!(node => node.name == departureNodeName)
+@system unittest
+{
+    (// dfmt off
+    "<?xml version='1.0' encoding='UTF-8'?>\n" ~
+    "<dp>\n" ~
+    "    <realtime>1</realtime>\n" ~
+    "    <st>\n" ~
+    "        <rt>0000</rt>\n" ~
+    "        <t></t>\n" ~
+    "    </st>\n" ~
+    "</dp>"
+    // dfmt on
+    ).parseDOM.children.filter!(node => node.name == departureNodeName)
         .front.delay.should.equal(dur!"minutes"(0));
+}
 
-    `
-    <?xml version="1.0" encoding="UTF-8"?>
-    <dp>
-        <realtime>1</realtime>
-        <st>
-            <rt></rt>
-            <t>0000</t>
-        </st>
-    </dp>
-    `.parseDOM!simpleXML.children.filter!(node => node.name == departureNodeName)
+@system unittest
+{
+    (// dfmt off
+    "<?xml version='1.0' encoding='UTF-8'?>\n" ~
+    "<dp>\n" ~
+    "    <realtime>1</realtime>\n" ~
+    "    <st>\n" ~
+    "        <rt></rt>\n" ~
+    "        <t>0000</t>\n" ~
+    "    </st>\n" ~
+    "</dp>"
+    // dfmt on
+    ).parseDOM.children.filter!(node => node.name == departureNodeName)
         .front.delay.should.equal(dur!"minutes"(0));
+}
 
-    `
-    <?xml version="1.0" encoding="UTF-8"?>
-    <dp>
-        <realtime>1</realtime>
-        <st>
-            <rt>0000</rt>
-            <t>0000</t>
-        </st>
-    </dp>
-    `.parseDOM!simpleXML.children.filter!(node => node.name == departureNodeName)
+@system unittest
+{
+    (// dfmt off
+    "<?xml version='1.0' encoding='UTF-8'?>\n" ~
+    "<dp>\n" ~
+    "    <realtime>1</realtime>\n" ~
+    "    <st>\n" ~
+    "        <rt>0000</rt>\n" ~
+    "        <t>0000</t>\n" ~
+    "    </st>\n" ~
+    "</dp>"
+    // dfmt on
+    ).parseDOM.children.filter!(node => node.name == departureNodeName)
         .front.delay.should.equal(dur!"minutes"(0));
+}
 
-    `
-    <?xml version="1.0" encoding="UTF-8"?>
-    <dp>
-        <realtime>1</realtime>
-        <st>
-            <rt>0001</rt>
-            <t>0000</t>
-        </st>
-    </dp>
-    `.parseDOM!simpleXML.children.filter!(node => node.name == departureNodeName)
+@system unittest
+{
+    (// dfmt off
+    "<?xml version='1.0' encoding='UTF-8'?>\n" ~
+    "<dp>\n" ~
+    "    <realtime>1</realtime>\n" ~
+    "    <st>\n" ~
+    "        <rt>0001</rt>\n" ~
+    "        <t>0000</t>\n" ~
+    "    </st>\n" ~
+    "</dp>"
+    // dfmt on
+    ).parseDOM.children.filter!(node => node.name == departureNodeName)
         .front.delay.should.equal(dur!"minutes"(1));
+}
 
-    `
-    <?xml version="1.0" encoding="UTF-8"?>
-    <dp>
-        <realtime>1</realtime>
-        <st>
-            <rt>1753</rt>
-            <t>1751</t>
-        </st>
-    </dp>
-    `.parseDOM!simpleXML.children.filter!(node => node.name == departureNodeName)
+@system unittest
+{
+    (// dfmt off
+    "<?xml version='1.0' encoding='UTF-8'?>\n" ~
+    "<dp>\n" ~
+    "    <realtime>1</realtime>\n" ~
+    "    <st>\n" ~
+    "        <rt>1753</rt>\n" ~
+    "        <t>1751</t>\n" ~
+    "    </st>\n" ~
+    "</dp>"
+    // dfmt on
+    ).parseDOM.children.filter!(node => node.name == departureNodeName)
         .front.delay.should.equal(dur!"minutes"(2));
+}
 
-    `
-    <?xml version="1.0" encoding="UTF-8"?>
-    <dp>
-        <realtime>1</realtime>
-        <st>
-            <rt>1010</rt>
-            <t>1000</t>
-        </st>
-    </dp>
-    `.parseDOM!simpleXML.children.filter!(node => node.name == departureNodeName)
+@system unittest
+{
+    (// dfmt off
+    "<?xml version='1.0' encoding='UTF-8'?>\n" ~
+    "<dp>\n" ~
+    "    <realtime>1</realtime>\n" ~
+    "    <st>\n" ~
+    "        <rt>1010</rt>\n" ~
+    "        <t>1000</t>\n" ~
+    "    </st>\n" ~
+    "</dp>"
+    // dfmt on
+    ).parseDOM.children.filter!(node => node.name == departureNodeName)
         .front.delay.should.equal(dur!"minutes"(10));
+}
 
-    `
-    <?xml version="1.0" encoding="UTF-8"?>
-    <dp>
-        <realtime>1</realtime>
-        <st>
-            <rt>1301</rt>
-            <t>1242</t>
-        </st>
-    </dp>
-    `.parseDOM!simpleXML.children.filter!(node => node.name == departureNodeName)
+@system unittest
+{
+    (// dfmt off
+    "<?xml version='1.0' encoding='UTF-8'?>\n" ~
+    "<dp>\n" ~
+    "    <realtime>1</realtime>\n" ~
+    "    <st>\n" ~
+    "        <rt>1301</rt>\n" ~
+    "        <t>1242</t>\n" ~
+    "    </st>\n" ~
+    "</dp>"
+    // dfmt on
+    ).parseDOM.children.filter!(node => node.name == departureNodeName)
         .front.delay.should.equal(dur!"minutes"(19));
+}
 
-    `
-    <?xml version="1.0" encoding="UTF-8"?>
-    <dp>
-        <realtime>1</realtime>
-        <st>
-            <rt>0000</rt>
-            <t>1242</t>
-        </st>
-    </dp>
-    `.parseDOM!simpleXML.children.filter!(node => node.name == departureNodeName)
+@system unittest
+{
+    (// dfmt off
+    "<?xml version='1.0' encoding='UTF-8'?>\n" ~
+    "<dp>\n" ~
+    "    <realtime>1</realtime>\n" ~
+    "    <st>\n" ~
+    "        <rt>0000</rt>\n" ~
+    "        <t>1242</t>\n" ~
+    "    </st>\n" ~
+    "</dp>"
+    // dfmt on
+    ).parseDOM.children.filter!(node => node.name == departureNodeName)
         .front.delay.should.equal(dur!"minutes"(678));
+}
 
-    `
-    <?xml version="1.0" encoding="UTF-8"?>
-    <dp>
-        <realtime>1</realtime>
-        <st>
-            <rt>0000</rt>
-            <t>2359</t>
-        </st>
-    </dp>
-    `.parseDOM!simpleXML.children.filter!(node => node.name == departureNodeName)
+@system unittest
+{
+    (// dfmt off
+    "<?xml version='1.0' encoding='UTF-8'?>\n" ~
+    "<dp>\n" ~
+    "    <realtime>1</realtime>\n" ~
+    "    <st>\n" ~
+    "        <rt>0000</rt>\n" ~
+    "        <t>2359</t>\n" ~
+    "    </st>\n" ~
+    "</dp>"
+    // dfmt on
+    ).parseDOM.children.filter!(node => node.name == departureNodeName)
         .front.delay.should.equal(dur!"minutes"(1));
 }
