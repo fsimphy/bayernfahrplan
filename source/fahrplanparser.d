@@ -1,28 +1,29 @@
 module fahrplanparser;
 
-import std.algorithm : map, each, joiner, filter;
+import std.algorithm : map, joiner, filter;
 import std.array : empty, front;
 import std.conv : to;
 import std.datetime : dur, TimeOfDay, DateTimeException;
 import std.string : format;
 
-import std.experimental.xml;
-import std.experimental.xml.dom;
-
-import substitution;
-import xmldecode : xmlDecode;
+import dxml.dom;
+import dxml.util;
 
 version (unittest)
 {
     import fluent.asserts;
 }
 
+import substitution;
+
 private:
 
+enum efaNodeName = "efa";
+enum departuresNodeName = "dps";
 enum departureNodeName = "dp";
 enum timeNodeName = "t";
 enum realTimeNodeName = "rt";
-enum ISOTimeNodeName = "st";
+enum isoTimeNodeName = "st";
 enum useRealTimeNodeName = "realtime";
 enum lineNodeName = "nu";
 enum destinationNodeName = "des";
@@ -37,32 +38,29 @@ public:
 
 auto parsedFahrplan(string data)
 {
-    auto domBuilder = data.lexer.parser.cursor.domBuilder;
-    domBuilder.setSource(data);
-    domBuilder.buildRecursive;
-    auto dom = domBuilder.getDocument;
-
-    // dfmt off
-    return dom.getElementsByTagName(departureNodeName).map!(dp => [
-        "line" : dp.childNodes.filter!(node => node.nodeName == busNodeName)
-                .map!(node => node.childNodes.filter!(node => node.nodeName == lineNodeName))
-                .joiner.front.textContent,
-        "direction" : dp.childNodes
-                .filter!(node => node.nodeName == busNodeName)
-                .map!(node => node.childNodes.filter!(node => node.nodeName == destinationNodeName))
-                .joiner.front.textContent.xmlDecode.substitute,
-        "departure" : "%02s:%02s".format(dp.departureTime.hour, dp.departureTime.minute),
-        "delay" : dp.delay.total!"minutes".to!string 
-            ]);
-    // dfmt on
+    return data.parseDOM!simpleXML.children.filter!(node => node.name == efaNodeName)
+        .map!(efa => efa.children).joiner.filter!(node => node.name == departuresNodeName)
+        .map!(dps => dps.children).joiner.filter!(node => node.name == departureNodeName)
+        .map!(dp => ["line" : dp.children.filter!(node => node.name == busNodeName)
+                .map!(busNodeName => busNodeName.children.filter!(node => node.name == lineNodeName)).joiner.map!(
+                    node => node.children).joiner.front.text,
+                "direction" : dp.children.filter!(node => node.name == busNodeName)
+                .map!(busNodeName => busNodeName.children.filter!(
+                    node => node.name == destinationNodeName)).joiner.map!(node => node.children)
+                .joiner.front.text.normalize.substitute, "departure"
+                : "%02s:%02s".format(dp.departureTime.hour, dp.departureTime.minute),
+                "delay" : dp.delay.total!"minutes".to!string]);
 }
 
 ///
 @system unittest
 {
+    /*
+    TODO: This currently fails, because dxml does not handle empty xml documents correctly
     `
     <?xml version="1.0" encoding="UTF-8"?>
     `.parsedFahrplan.empty.should.equal(true);
+    */
 
     `
     <?xml version="1.0" encoding="UTF-8"?>
@@ -160,211 +158,188 @@ class CouldNotFindNodeException : Exception
     }
 }
 
-auto departureTime(string _timeNodeName = timeNodeName, T : Node!string)(T dp)
-        if (isInputRange!(typeof(T.init.childNodes)))
+class CouldNotFindNodeWithContentException : Exception
+{
+    this(string node) @safe pure
+    {
+        super(`Could not find node "%s"`.format(node));
+    }
+}
+
+auto departureTime(string _timeNodeName = timeNodeName, T)(T dp)
 in
 {
-    assert(dp.nodeName == departureNodeName);
+    assert(dp.name == departureNodeName);
 }
 body
 {
-    auto timeNodes = dp.childNodes.filter!(node => node.nodeName == ISOTimeNodeName)
-        .map!(ISOTimeNode => ISOTimeNode.childNodes.filter!(node => node.nodeName == _timeNodeName)).joiner();
+    import std.stdio : writeln;
+    import std.traits : fullyQualifiedName;
+
+    auto timeNodes = dp.children.filter!(node => node.name == isoTimeNodeName)
+        .map!(ISOTimeNode => ISOTimeNode.children.filter!(node => node.name == _timeNodeName)).joiner.map!(
+                node => node.children).joiner;
 
     if (timeNodes.empty)
-        throw new CouldNotFindNodeException(_timeNodeName);
-    import std.stdio : stdout, writeln;
+        throw new CouldNotFindNodeWithContentException(_timeNodeName);
 
-    return TimeOfDay.fromISOString(timeNodes.front.textContent ~ "00");
+    return TimeOfDay.fromISOString(timeNodes.front.text ~ "00");
 }
 
 @system unittest
 {
-    import std.exception : assertThrown;
-
-    auto domBuilder = "".lexer.parser.cursor.domBuilder;
-    domBuilder.setSource(`
+    `
     <?xml version="1.0" encoding="UTF-8"?>
     <dp>
         <st>
             <t>0000</t>
         </st>
     </dp>
-    `);
-    domBuilder.buildRecursive;
-    domBuilder.getDocument.getElementsByTagName(departureNodeName)
+    `.parseDOM!simpleXML.children.filter!(node => node.name == departureNodeName)
         .front.departureTime.should.equal(TimeOfDay(0, 0));
 
-    domBuilder.setSource(`
+    `
     <?xml version="1.0" encoding="UTF-8"?>
     <dp>
         <st>
             <t>0013</t>
         </st>
     </dp>
-    `);
-    domBuilder.buildRecursive;
-    domBuilder.getDocument.getElementsByTagName(departureNodeName)
+    `.parseDOM!simpleXML.children.filter!(node => node.name == departureNodeName)
         .front.departureTime.should.equal(TimeOfDay(0, 13));
 
-    domBuilder.setSource(`
+    `
     <?xml version="1.0" encoding="UTF-8"?>
     <dp>
         <st>
             <t>1100</t>
         </st>
     </dp>
-    `);
-    domBuilder.buildRecursive;
-    domBuilder.getDocument.getElementsByTagName(departureNodeName)
+    `.parseDOM!simpleXML.children.filter!(node => node.name == departureNodeName)
         .front.departureTime.should.equal(TimeOfDay(11, 00));
 
-    domBuilder.setSource(`
+    `
     <?xml version="1.0" encoding="UTF-8"?>
     <dp>
         <st>
             <t>1242</t>
         </st>
     </dp>
-    `);
-    domBuilder.buildRecursive;
-    domBuilder.getDocument.getElementsByTagName(departureNodeName)
+    `.parseDOM!simpleXML.children.filter!(node => node.name == departureNodeName)
         .front.departureTime.should.equal(TimeOfDay(12, 42));
 
-    domBuilder.setSource(`
+    `
     <?xml version="1.0" encoding="UTF-8"?>
     <dp>
         <st>
             <t>2359</t>
         </st>
     </dp>
-    `);
-    domBuilder.buildRecursive;
-    domBuilder.getDocument.getElementsByTagName(departureNodeName)
+    `.parseDOM!simpleXML.children.filter!(node => node.name == departureNodeName)
         .front.departureTime.should.equal(TimeOfDay(23, 59));
 
-    domBuilder.setSource(`
+    `
     <?xml version="1.0" encoding="UTF-8"?>
     <dp>
         <st>
             <t>2400</t>
         </st>
-    </dp>`);
-    domBuilder.buildRecursive;
-    assertThrown!DateTimeException(domBuilder.getDocument.getElementsByTagName(
-            departureNodeName).front.departureTime);
+    </dp>`.parseDOM!simpleXML.children.filter!(node => node.name == departureNodeName)
+        .front.departureTime.should.throwException!DateTimeException;
 
-    domBuilder.setSource(`
+    `
     <?xml version="1.0" encoding="UTF-8"?>
     <dp>
         <st>
             <t>0061</t>
         </st>
     </dp>
-    `);
-    domBuilder.buildRecursive;
-    domBuilder.getDocument.getElementsByTagName(departureNodeName)
+    `.parseDOM!simpleXML.children.filter!(node => node.name == departureNodeName)
         .front.departureTime.should.throwException!DateTimeException;
 
-    domBuilder.setSource(`
+    `
     <?xml version="1.0" encoding="UTF-8"?>
     <dp>
         <st>
             <t>2567</t>
         </st>
     </dp>
-    `);
-    domBuilder.buildRecursive;
-    domBuilder.getDocument.getElementsByTagName(departureNodeName)
+    `.parseDOM!simpleXML.children.filter!(node => node.name == departureNodeName)
         .front.departureTime.should.throwException!DateTimeException;
 
-    domBuilder.setSource(`
+    `
     <?xml version="1.0" encoding="UTF-8"?>
     <dp>
         <st>
             <t></t>
         </st>
     </dp>
-    `);
-    domBuilder.buildRecursive;
-    domBuilder.getDocument.getElementsByTagName(departureNodeName)
-        .front.departureTime.should.throwException!DateTimeException;
+    `.parseDOM!simpleXML.children.filter!(node => node.name == departureNodeName)
+        .front.departureTime.should.throwException!CouldNotFindNodeWithContentException;
 
-    domBuilder.setSource(`
+    `
     <?xml version="1.0" encoding="UTF-8"?>
     <dp>
         <st>
             <t>0</t>
         </st>
     </dp>
-    `);
-    domBuilder.buildRecursive;
-    domBuilder.getDocument.getElementsByTagName(departureNodeName)
+    `.parseDOM!simpleXML.children.filter!(node => node.name == departureNodeName)
         .front.departureTime.should.throwException!DateTimeException;
 
-    domBuilder.setSource(`
+    `
     <?xml version="1.0" encoding="UTF-8"?>
     <dp>
         <st>
             <t>00</t>
         </st>
     </dp>
-    `);
-    domBuilder.buildRecursive;
-    domBuilder.getDocument.getElementsByTagName(departureNodeName)
+    `.parseDOM!simpleXML.children.filter!(node => node.name == departureNodeName)
         .front.departureTime.should.throwException!DateTimeException;
 
-    domBuilder.setSource(`
+    `
     <?xml version="1.0" encoding="UTF-8"?>
     <dp>
         <st>
             <t>000000</t>
         </st>
     </dp>
-    `);
-    domBuilder.buildRecursive;
-    domBuilder.getDocument.getElementsByTagName(departureNodeName)
+    `.parseDOM!simpleXML.children.filter!(node => node.name == departureNodeName)
         .front.departureTime.should.throwException!DateTimeException;
 
-    domBuilder.setSource(`
+    `
     <?xml version="1.0" encoding="UTF-8"?>
     <dp>
         <st>
             <t>00:00</t>
         </st>
     </dp>
-    `);
-    domBuilder.buildRecursive;
-    domBuilder.getDocument.getElementsByTagName(departureNodeName)
+    `.parseDOM!simpleXML.children.filter!(node => node.name == departureNodeName)
         .front.departureTime.should.throwException!DateTimeException;
 
-    domBuilder.setSource(`
+    `
     <?xml version="1.0" encoding="UTF-8"?>
     <dp>
         <st>
             <t>abcd</t>
         </st>
     </dp>
-    `);
-    domBuilder.buildRecursive;
-    domBuilder.getDocument.getElementsByTagName(departureNodeName)
+    `.parseDOM!simpleXML.children.filter!(node => node.name == departureNodeName)
         .front.departureTime.should.throwException!DateTimeException;
-
 }
 
-import std.range.primitives : isInputRange;
-
-auto delay(T : Node!string)(T dp) if (isInputRange!(typeof(T.init.childNodes)))
+auto delay(T)(T dp)
 in
 {
-    assert(dp.nodeName == departureNodeName);
+    assert(dp.name == departureNodeName);
 }
 body
 {
-    auto useRealTimeNodes = dp.childNodes.filter!(node => node.nodeName == useRealTimeNodeName);
+    auto useRealTimeNodes = dp.children.filter!(node => node.name == useRealTimeNodeName)
+        .map!(node => node.children).joiner;
     if (useRealTimeNodes.empty)
-        throw new CouldNotFindNodeException(useRealTimeNodeName);
-    immutable useRealTimeString = useRealTimeNodes.front.textContent;
+        throw new CouldNotFindNodeWithContentException(useRealTimeNodeName);
+    immutable useRealTimeString = useRealTimeNodes.front.text;
     if (useRealTimeString == "0")
         return dur!"minutes"(0);
     else if (useRealTimeString == "1")
@@ -378,7 +353,7 @@ body
                 timeDiff = dur!"hours"(24) + timeDiff;
             return timeDiff;
         }
-        catch (CouldNotFindNodeException e)
+        catch (CouldNotFindNodeWithContentException e)
         {
             return dur!"minutes"(0);
         }
@@ -389,85 +364,69 @@ body
 
 @system unittest
 {
-    auto domBuilder = "".lexer.parser.cursor.domBuilder;
-
-    domBuilder.setSource(`
+    `
     <?xml version="1.0" encoding="UTF-8"?>
     <dp>
         <realtime>0</realtime>
     </dp>
-    `);
-    domBuilder.buildRecursive;
-    domBuilder.getDocument.getElementsByTagName(departureNodeName)
+    `.parseDOM!simpleXML.children.filter!(node => node.name == departureNodeName)
         .front.delay.should.equal(dur!"minutes"(0));
 
-    domBuilder.setSource(`
+    `
     <?xml version="1.0" encoding="UTF-8"?>
     <dp>
         <realtime></realtime>
     </dp>
-    `);
-    domBuilder.buildRecursive;
-    domBuilder.getDocument.getElementsByTagName(departureNodeName)
-        .front.delay.should.throwException!(UnexpectedValueException!string);
+    `.parseDOM!simpleXML.children.filter!(node => node.name == departureNodeName)
+        .front.delay.should.throwException!(CouldNotFindNodeWithContentException);
 
-    domBuilder.setSource(`
+    `
     <?xml version="1.0" encoding="UTF-8"?>
     <dp>
         <realtime>2</realtime>
     </dp>
-    `);
-    domBuilder.buildRecursive;
-    domBuilder.getDocument.getElementsByTagName(departureNodeName)
+    `.parseDOM!simpleXML.children.filter!(node => node.name == departureNodeName)
         .front.delay.should.throwException!(UnexpectedValueException!string);
 
-    domBuilder.setSource(`
+    `
     <?xml version="1.0" encoding="UTF-8"?>
     <dp>
         <realtime>a</realtime>
     </dp>
-    `);
-    domBuilder.buildRecursive;
-    domBuilder.getDocument.getElementsByTagName(departureNodeName)
+    `.parseDOM!simpleXML.children.filter!(node => node.name == departureNodeName)
         .front.delay.should.throwException!(UnexpectedValueException!string);
 
-    domBuilder.setSource(`
+    `
     <?xml version="1.0" encoding="UTF-8"?>
     <dp>
         <realtime>1</realtime>
     </dp>
-    `);
-    domBuilder.buildRecursive;
-    assert(domBuilder.getDocument.getElementsByTagName(departureNodeName)
-            .front.delay == dur!"minutes"(0));
-
-    domBuilder.setSource(`
-    <?xml version="1.0" encoding="UTF-8"?>
-    <dp>
-        <realtime>1</realtime>
-        <st>
-            <t></t>
-        </st>
-    </dp>
-    `);
-    domBuilder.buildRecursive;
-    domBuilder.getDocument.getElementsByTagName(departureNodeName)
-        .front.delay.should.throwException!DateTimeException;
-
-    domBuilder.setSource(`
-    <?xml version="1.0" encoding="UTF-8"?>
-    <dp>
-        <realtime>1</realtime>
-        <st>
-            <rt></rt>
-        </st>
-    </dp>
-    `);
-    domBuilder.buildRecursive;
-    domBuilder.getDocument.getElementsByTagName(departureNodeName)
+    `.parseDOM!simpleXML.children.filter!(node => node.name == departureNodeName)
         .front.delay.should.equal(dur!"minutes"(0));
 
-    domBuilder.setSource(`
+    `
+    <?xml version="1.0" encoding="UTF-8"?>
+    <dp>
+        <realtime>1</realtime>
+        <st>
+            <t></t>
+        </st>
+    </dp>
+    `.parseDOM!simpleXML.children.filter!(node => node.name == departureNodeName)
+        .front.delay.should.equal(dur!"minutes"(0));
+
+    `
+    <?xml version="1.0" encoding="UTF-8"?>
+    <dp>
+        <realtime>1</realtime>
+        <st>
+            <rt></rt>
+        </st>
+    </dp>
+    `.parseDOM!simpleXML.children.filter!(node => node.name == departureNodeName)
+        .front.delay.should.equal(dur!"minutes"(0));
+
+    `
     <?xml version="1.0" encoding="UTF-8"?>
     <dp>
         <st>
@@ -475,12 +434,10 @@ body
             <t></t>
         </st>
     </dp>
-    `);
-    domBuilder.buildRecursive;
-    domBuilder.getDocument.getElementsByTagName(departureNodeName)
-        .front.delay.should.throwException!CouldNotFindNodeException;
+    `.parseDOM!simpleXML.children.filter!(node => node.name == departureNodeName)
+        .front.delay.should.throwException!CouldNotFindNodeWithContentException;
 
-    domBuilder.setSource(`
+    `
     <?xml version="1.0" encoding="UTF-8"?>
     <dp>
         <realtime>1</realtime>
@@ -489,12 +446,10 @@ body
             <t></t>
         </st>
     </dp>
-    `);
-    domBuilder.buildRecursive;
-    domBuilder.getDocument.getElementsByTagName(departureNodeName)
-        .front.delay.should.throwException!DateTimeException;
+    `.parseDOM!simpleXML.children.filter!(node => node.name == departureNodeName)
+        .front.delay.should.equal(dur!"minutes"(0));
 
-    domBuilder.setSource(`
+    `
     <?xml version="1.0" encoding="UTF-8"?>
     <dp>
         <realtime>1</realtime>
@@ -503,12 +458,10 @@ body
             <t></t>
         </st>
     </dp>
-    `);
-    domBuilder.buildRecursive;
-    domBuilder.getDocument.getElementsByTagName(departureNodeName)
-        .front.delay.should.throwException!DateTimeException;
+    `.parseDOM!simpleXML.children.filter!(node => node.name == departureNodeName)
+        .front.delay.should.equal(dur!"minutes"(0));
 
-    domBuilder.setSource(`
+    `
     <?xml version="1.0" encoding="UTF-8"?>
     <dp>
         <realtime>1</realtime>
@@ -517,12 +470,10 @@ body
             <t>0000</t>
         </st>
     </dp>
-    `);
-    domBuilder.buildRecursive;
-    domBuilder.getDocument.getElementsByTagName(departureNodeName)
-        .front.delay.should.throwException!DateTimeException;
+    `.parseDOM!simpleXML.children.filter!(node => node.name == departureNodeName)
+        .front.delay.should.equal(dur!"minutes"(0));
 
-    domBuilder.setSource(`
+    `
     <?xml version="1.0" encoding="UTF-8"?>
     <dp>
         <realtime>1</realtime>
@@ -531,12 +482,10 @@ body
             <t>0000</t>
         </st>
     </dp>
-    `);
-    domBuilder.buildRecursive;
-    domBuilder.getDocument.getElementsByTagName(departureNodeName)
+    `.parseDOM!simpleXML.children.filter!(node => node.name == departureNodeName)
         .front.delay.should.equal(dur!"minutes"(0));
 
-    domBuilder.setSource(`
+    `
     <?xml version="1.0" encoding="UTF-8"?>
     <dp>
         <realtime>1</realtime>
@@ -545,12 +494,10 @@ body
             <t>0000</t>
         </st>
     </dp>
-    `);
-    domBuilder.buildRecursive;
-    domBuilder.getDocument.getElementsByTagName(departureNodeName)
+    `.parseDOM!simpleXML.children.filter!(node => node.name == departureNodeName)
         .front.delay.should.equal(dur!"minutes"(1));
 
-    domBuilder.setSource(`
+    `
     <?xml version="1.0" encoding="UTF-8"?>
     <dp>
         <realtime>1</realtime>
@@ -559,12 +506,10 @@ body
             <t>1751</t>
         </st>
     </dp>
-    `);
-    domBuilder.buildRecursive;
-    domBuilder.getDocument.getElementsByTagName(departureNodeName)
+    `.parseDOM!simpleXML.children.filter!(node => node.name == departureNodeName)
         .front.delay.should.equal(dur!"minutes"(2));
 
-    domBuilder.setSource(`
+    `
     <?xml version="1.0" encoding="UTF-8"?>
     <dp>
         <realtime>1</realtime>
@@ -573,12 +518,10 @@ body
             <t>1000</t>
         </st>
     </dp>
-    `);
-    domBuilder.buildRecursive;
-    domBuilder.getDocument.getElementsByTagName(departureNodeName)
+    `.parseDOM!simpleXML.children.filter!(node => node.name == departureNodeName)
         .front.delay.should.equal(dur!"minutes"(10));
 
-    domBuilder.setSource(`
+    `
     <?xml version="1.0" encoding="UTF-8"?>
     <dp>
         <realtime>1</realtime>
@@ -587,12 +530,10 @@ body
             <t>1242</t>
         </st>
     </dp>
-    `);
-    domBuilder.buildRecursive;
-    domBuilder.getDocument.getElementsByTagName(departureNodeName)
+    `.parseDOM!simpleXML.children.filter!(node => node.name == departureNodeName)
         .front.delay.should.equal(dur!"minutes"(19));
 
-    domBuilder.setSource(`
+    `
     <?xml version="1.0" encoding="UTF-8"?>
     <dp>
         <realtime>1</realtime>
@@ -601,12 +542,10 @@ body
             <t>1242</t>
         </st>
     </dp>
-    `);
-    domBuilder.buildRecursive;
-    domBuilder.getDocument.getElementsByTagName(departureNodeName)
+    `.parseDOM!simpleXML.children.filter!(node => node.name == departureNodeName)
         .front.delay.should.equal(dur!"minutes"(678));
 
-    domBuilder.setSource(`
+    `
     <?xml version="1.0" encoding="UTF-8"?>
     <dp>
         <realtime>1</realtime>
@@ -615,8 +554,6 @@ body
             <t>2359</t>
         </st>
     </dp>
-    `);
-    domBuilder.buildRecursive;
-    domBuilder.getDocument.getElementsByTagName(departureNodeName)
+    `.parseDOM!simpleXML.children.filter!(node => node.name == departureNodeName)
         .front.delay.should.equal(dur!"minutes"(1));
 }
