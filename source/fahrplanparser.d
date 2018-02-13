@@ -7,7 +7,8 @@ import std.datetime : dur, TimeOfDay, DateTimeException;
 import std.string : format;
 
 import dxml.dom;
-import dxml.util;
+import dxml.util : normalize;
+import dxml.parser : XMLParsingException;
 
 version (unittest)
 {
@@ -55,13 +56,6 @@ auto parsedFahrplan(string data)
 ///
 @system unittest
 {
-    /*
-    TODO: This currently fails, because dxml does not handle empty xml documents correctly
-    `
-    <?xml version="1.0" encoding="UTF-8"?>
-    `.parsedFahrplan.empty.should.equal(true);
-    */
-
     `
     <?xml version="1.0" encoding="UTF-8"?>
     <efa>
