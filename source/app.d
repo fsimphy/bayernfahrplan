@@ -1,3 +1,7 @@
+import fahrplanparser;
+
+import requests : getContent;
+
 import std.array : array, replace;
 import std.datetime : Clock;
 import std.file : exists, isFile;
@@ -5,10 +9,6 @@ import std.format : format;
 import std.getopt : defaultGetoptPrinter, getopt;
 import std.json : JSONValue;
 import std.stdio : File, writeln;
-
-import requests : getContent;
-
-import fahrplanparser;
 
 import substitution;
 
