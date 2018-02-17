@@ -6,10 +6,23 @@ d:
     - ldc-1.7.0
 os:
     - linux
+env:
+    - BUILD_TYPE=debug
+    - BUILD_TYPE=unittest
 
-before_install:
-    - sudo apt-get install -y libevent-dev
+matrix:
+  include:
+  - d: dmd-2.077.1
+    env: BUILD_TYPE=unittest-cov
+  exclude:
+  - d: dmd-2.077.1
+    env: BUILD_TYPE=unittest
+
+addons:
+  apt:
+    packages:
+      - libevent-dev
+      - libssl-dev
 
 script:
-- dub build
-- dub test
+- ./travis.sh
