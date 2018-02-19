@@ -78,7 +78,7 @@ dub run [-- options]
 ```
 If you already built the project, you can also run it directly:
 ```
-./generated/bayernfahrplan [options]
+./bayernfahrplan [options]
 ```
 See configuration for a list of available options.
 
