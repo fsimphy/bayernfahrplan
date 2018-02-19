@@ -145,6 +145,7 @@ Now you can build, run and test the project as explained in the earlier sections
 
 * [DUB](https://code.dlang.org/) - Dependency Management
 * [requests](https://github.com/ikod/dlang-requests) - HTTP client library
+* [dxml](https://github.com/jmdavis/dxml) - XML library
 
 
 ## Contributing
@@ -168,5 +169,5 @@ This project is licensed under the MIT License, see the [LICENSE.md](LICENSE.md)
 
 ## Acknowledgments
 
-Thanks a lot to the folks at the [D Programming Language Forum](https://forum.dlang.org/) and especially to [ikod](https://github.com/ikod), the maintainer of [dlang-requests](https://vibed.org/), for always helping out with technical questions.
+Thanks a lot to the folks at the [D Programming Language Forum](https://forum.dlang.org/) and especially to [ikod](https://github.com/ikod), the maintainer of [dlang-requests](https://vibed.org/), and [Jonathan M Davis](https://github.com/jmdavis/), the maintainer of [dxml](https://github.com/jmdavis/dxml), for always helping out with technical questions.
 

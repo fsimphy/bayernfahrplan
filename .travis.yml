@@ -2,6 +2,7 @@
 language: d
 
 d:
+    - dmd-2.078.3
     - dmd-2.078.2
 os:
     - linux
@@ -11,10 +12,10 @@ env:
 
 matrix:
   include:
-  - d: dmd-2.077.1
+  - d: dmd-2.078.3
     env: BUILD_TYPE=unittest-cov
   exclude:
-  - d: dmd-2.077.1
+  - d: dmd-2.078.3
     env: BUILD_TYPE=unittest
 
 addons:
