@@ -1,5 +1,7 @@
+import core.time : Duration;
+
 import std.array : array, replace;
-import std.datetime : Clock;
+import std.datetime : Clock, SysTime, TimeOfDay;
 import std.file : exists, isFile;
 import std.format : format;
 import std.getopt : defaultGetoptPrinter, getopt;
@@ -25,12 +27,14 @@ void main(string[] args)
     string busStop = "Regensburg Universität";
     string substitutionFileName = "replacement.txt";
     bool versionWanted;
+    int walkingDelay;
     // dfmt off
     auto helpInformation = getopt(args,
         "file|f", "The file that the data is written to.", &fileName,
         "stop|s", "The bus stop for which to fetch data.", &busStop,
         "replacement-file|r", "The file that contais the direction name replacement info.", &substitutionFileName,
-        "version|v", "Display the version of this program.", &versionWanted);
+        "version|v", "Display the version of this program.", &versionWanted,
+        "delay|d", "Drop departures occuring within this timespan (in minutes).", &walkingDelay);
     // dfmt on
 
     if (helpInformation.helpWanted)
@@ -67,9 +71,10 @@ void main(string[] args)
     }
 
     auto currentTime = Clock.currTime;
+    
     JSONValue j = ["time" : "%02s:%02s".format(currentTime.hour, currentTime.minute)];
 
-    j.object["departures"] = (cast(string) content.data).parsedFahrplan.array.JSONValue;
+    j.object["departures"] = (cast(string) content.data).parsedFahrplan(walkingDelay).array.JSONValue;
     auto output = j.toPrettyString.replace("\\/", "/");
     if (fileName !is null)
     {

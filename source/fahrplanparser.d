@@ -1,9 +1,11 @@
 module fahrplanparser;
 
-import std.algorithm : map;
+import core.time : Duration;
+
+import std.algorithm : map, filter;
 import std.array : empty, front;
 import std.conv : to;
-import std.datetime : dur, TimeOfDay, DateTimeException;
+import std.datetime;
 import std.string : format;
 
 import kxml.xml : readDocument, XmlNode;
@@ -14,6 +16,7 @@ private:
 
 enum departureNodeName = "dp";
 enum timeNodeName = "t";
+enum dateNodeName = "da";
 enum realTimeNodeName = "rt";
 
 enum departuresXPath = "/efa/dps/" ~ departureNodeName;
@@ -33,11 +36,16 @@ public:
 * data is expected to contain valid XML as returned by queries sent to http://mobile.defas-fgi.de/beg/.
 */
 
-auto parsedFahrplan(in string data)
+auto parsedFahrplan(in string data, in long walkingDelay = 0, in SysTime currentTime = Clock.currTime)
 {
+    import core.time : minutes;
+
+    auto walkingDuration = minutes(walkingDelay);
+    
     // dfmt off
     return data.readDocument
         .parseXPath(departuresXPath)
+        .filter!(dp => dp.isReachable(walkingDuration, currentTime))
         .map!(dp => ["departure" : "%02s:%02s".format(dp.departureTime.hour, dp.departureTime.minute),
                      "delay" : dp.delay.total!"minutes".to!string,
                      "line": dp.parseXPath(lineXPath).front.getCData,
@@ -50,28 +58,31 @@ auto parsedFahrplan(in string data)
 {
     import std.array : array;
 
+    auto testCurrentTime = SysTime(
+        DateTime(2018, 1, 1, 0, 0, 0)
+    );
+
     auto xml = "";
-    assert(xml.parsedFahrplan.array == []);
+    assert(xml.parsedFahrplan(0, testCurrentTime).array == []);
 
     xml = "<efa><dps></dps></efa>";
-    assert(xml.parsedFahrplan.array == []);
+    assert(xml.parsedFahrplan(0, testCurrentTime).array == []);
 
-    xml = "<efa><dps><dp><realtime>1</realtime><st><t>1224</t><rt>1242</rt></st><m><nu>6</nu><des>Wernerwerkstraße</des></m></dp></dps></efa>";
-    assert(xml.parsedFahrplan.array == [["direction" : "Wernerwerkstraße",
+    xml = "<efa><dps><dp><realtime>1</realtime><st><da>20180101</da><t>1224</t><rt>1242</rt></st><m><nu>6</nu><des>Wernerwerkstraße</des></m></dp></dps></efa>";
+    assert(xml.parsedFahrplan(0, testCurrentTime).array == [["direction" : "Wernerwerkstraße",
             "line" : "6", "departure" : "12:24", "delay" : "18"]]);
 
-    xml = "<efa><dps><dp><realtime>0</realtime><st><t>1224</t></st><m><nu>6</nu><des>Wernerwerkstraße</des></m></dp></dps></efa>";
-    assert(xml.parsedFahrplan.array == [["direction" : "Wernerwerkstraße",
+    xml = "<efa><dps><dp><realtime>0</realtime><st><da>20180101</da><t>1224</t></st><m><nu>6</nu><des>Wernerwerkstraße</des></m></dp></dps></efa>";
+    assert(xml.parsedFahrplan(0, testCurrentTime).array == [["direction" : "Wernerwerkstraße",
             "line" : "6", "departure" : "12:24", "delay" : "0"]]);
 
-    xml = "<efa><dps><dp><realtime>0</realtime><st><t>1224</t></st><m><nu>6</nu><des>Wernerwerkstraße</des></m></dp><dp><realtime>1</realtime><st><t>1353</t><rt>1356</rt></st><m><nu>11</nu><des>Burgweinting</des></m></dp></dps></efa>";
-    assert(xml.parsedFahrplan.array == [["direction" : "Wernerwerkstraße", "line" : "6",
+    xml = "<efa><dps><dp><realtime>0</realtime><st><da>20180101</da><t>1224</t></st><m><nu>6</nu><des>Wernerwerkstraße</des></m></dp><dp><realtime>1</realtime><st><da>20180101</da><t>1353</t><rt>1356</rt></st><m><nu>11</nu><des>Burgweinting</des></m></dp></dps></efa>";
+    assert(xml.parsedFahrplan(0, testCurrentTime).array == [["direction" : "Wernerwerkstraße", "line" : "6",
             "departure" : "12:24", "delay" : "0"], ["direction" : "Burgweinting",
             "line" : "11", "departure" : "13:53", "delay" : "3"]]);
 }
 
 private:
-
 class UnexpectedValueException(T) : Exception
 {
     this(T t, string node) @safe pure
@@ -80,12 +91,108 @@ class UnexpectedValueException(T) : Exception
     }
 }
 
-class CouldNotFindeNodeException : Exception
+class CouldNotFindNodeException : Exception
 {
     this(string node) @safe pure
     {
         super(`Could not find node "%s"`.format(node));
     }
+}
+
+/**
+ * Checks if a departure given as XMLNode can be reached within a given duration.
+ */
+bool isReachable(XmlNode dp, Duration walkingDuration, SysTime currentTime = Clock.currTime) in 
+{
+   assert(walkingDuration >= Duration.zero);
+}
+body
+{
+    import std.datetime.date : Date;
+    import std.datetime : DateTime;
+
+    auto departureTime = dp.departureTime;
+    auto departureDate = dp.departureDate;
+
+    auto departureDateTime = DateTime(dp.departureDate, dp.departureTime);
+
+    auto timeUntilDeparture = SysTime(departureDateTime) - currentTime;
+    return timeUntilDeparture >= walkingDuration;
+}
+@system unittest {
+    import core.time : minutes;
+    import std.datetime : DateTime;
+
+    // easily reachable
+    auto walkingDuration = minutes(9);
+    auto testCurrentTime = SysTime(
+        DateTime(2018, 1, 1, 0, 0, 0)
+    );
+    auto xml = "<dp><st><da>20180101</da><t>0010</t></st></dp>".readDocument.parseXPath("/dp").front;
+    assert(xml.isReachable(walkingDuration, testCurrentTime));
+
+    // exactly reachable
+    walkingDuration = minutes(10);
+    assert(xml.isReachable(walkingDuration, testCurrentTime));
+    
+    // unreachable
+    walkingDuration = minutes(11);
+    assert(!xml.isReachable(walkingDuration, testCurrentTime));
+}
+
+auto departureDate(string _dateNodeName = dateNodeName)(XmlNode dp)
+in
+{
+    assert(dp.getName == departureNodeName);
+}
+body
+{
+    import std.datetime.date : Date;
+    auto dateNodes = dp.parseXPath(timeXPath!_dateNodeName);
+    if(dateNodes.empty) {
+        import std.stdio : writeln;
+        writeln(dp);
+        throw new CouldNotFindNodeException(_dateNodeName);
+    }
+    return Date.fromISOString(dateNodes.front.getCData);
+}
+@system unittest
+{
+    import std.exception : assertThrown;
+
+    auto xml = "<dp><st><da>19700101</da></st></dp>".readDocument.parseXPath("/dp").front;
+    assert(xml.departureDate == Date(1970, 1, 1));
+    
+    xml = "<dp><st><da>19700124</da></st></dp>".readDocument.parseXPath("/dp").front;
+    assert(xml.departureDate == Date(1970, 1, 24));
+    
+    xml = "<dp><st><da>19701101</da></st></dp>".readDocument.parseXPath("/dp").front;
+    assert(xml.departureDate == Date(1970, 11, 1));
+    
+    xml = "<dp><st><da>20180101</da></st></dp>".readDocument.parseXPath("/dp").front;
+    assert(xml.departureDate == Date(2018, 1, 1));
+
+    xml = "<dp><st><da>20181124</da></st></dp>".readDocument.parseXPath("/dp").front;
+    assert(xml.departureDate == Date(2018, 11, 24));
+
+    assertThrown!DateTimeException("<dp><st><da>00000000</da></st></dp>".readDocument.parseXPath("/dp")
+            .front.departureDate);
+    assertThrown!DateTimeException("<dp><st><da>00001300</da></st></dp>".readDocument.parseXPath("/dp")
+            .front.departureDate);
+    assertThrown!DateTimeException("<dp><st><da>00000032</da></st></dp>".readDocument.parseXPath("/dp")
+            .front.departureDate);
+    assertThrown!DateTimeException("<dp><st><da>20180229</da></st></dp>".readDocument.parseXPath("/dp")
+            .front.departureDate);
+    assertThrown!DateTimeException("<dp><st><da></da></st></dp>".readDocument.parseXPath("/dp")
+            .front.departureDate);
+    assertThrown!DateTimeException("<dp><st><da>11</da></st></dp>".readDocument.parseXPath("/dp")
+            .front.departureDate);
+    assertThrown!DateTimeException("<dp><st><da>201801011</da></st></dp>".readDocument.parseXPath("/dp")
+            .front.departureDate);
+    assertThrown!DateTimeException("<dp><st><da>2018.01.01</da></st></dp>".readDocument.parseXPath("/dp")
+            .front.departureDate);
+    assertThrown!DateTimeException("<dp><st><da>2018-a0-01</da></st></dp>".readDocument.parseXPath("/dp")
+            .front.departureDate);
 }
 
 auto departureTime(string _timeNodeName = timeNodeName)(XmlNode dp)
@@ -97,7 +204,7 @@ body
 {
     auto timeNodes = dp.parseXPath(timeXPath!_timeNodeName);
     if (timeNodes.empty)
-        throw new CouldNotFindeNodeException(_timeNodeName);
+        throw new CouldNotFindNodeException(_timeNodeName);
 
     return TimeOfDay.fromISOString(timeNodes.front.getCData ~ "00");
 }
@@ -162,7 +269,7 @@ body
                 timeDiff = dur!"hours"(24) + timeDiff;
             return timeDiff;
         }
-        catch (CouldNotFindeNodeException e)
+        catch (CouldNotFindNodeException e)
         {
             return dur!"minutes"(0);
         }
