@@ -150,8 +150,6 @@ body
     import std.datetime.date : Date;
     auto dateNodes = dp.parseXPath(timeXPath!_dateNodeName);
     if(dateNodes.empty) {
-        import std.stdio : writeln;
-        writeln(dp);
         throw new CouldNotFindNodeException(_dateNodeName);
     }
     return Date.fromISOString(dateNodes.front.getCData);
@@ -192,6 +190,8 @@ body
     assertThrown!DateTimeException("<dp><st><da>2018.01.01</da></st></dp>".readDocument.parseXPath("/dp")
             .front.departureDate);
     assertThrown!DateTimeException("<dp><st><da>2018-a0-01</da></st></dp>".readDocument.parseXPath("/dp")
+            .front.departureDate);
+    assertThrown!CouldNotFindNodeException("<dp><st><t>00:00</t></st></dp>".readDocument.parseXPath("/dp")
             .front.departureDate);
 }
 
