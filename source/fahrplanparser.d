@@ -8,7 +8,7 @@ import std.conv : to;
 import std.datetime;
 import std.string : format;
 
-import kxml.xml : readDocument, XmlNode;
+import kxml.xml : XmlNode;
 
 import substitution;
 
@@ -39,6 +39,7 @@ public:
 auto parsedFahrplan(in string data, in long walkingDelay = 0, in SysTime currentTime = Clock.currTime)
 {
     import core.time : minutes;
+    import kxml.xml : readDocument;
 
     auto walkingDuration = minutes(walkingDelay);
     
@@ -122,13 +123,14 @@ body
 @system unittest {
     import core.time : minutes;
     import std.datetime : DateTime;
+    import testutils : toScheduleXmlNode;
 
     // easily reachable
     auto walkingDuration = minutes(9);
     auto testCurrentTime = SysTime(
         DateTime(2018, 1, 1, 0, 0, 0)
     );
-    auto xml = "<dp><st><da>20180101</da><t>0010</t></st></dp>".readDocument.parseXPath("/dp").front;
+    auto xml = "<dp><st><da>20180101</da><t>0010</t></st></dp>".toScheduleXmlNode;
     assert(xml.isReachable(walkingDuration, testCurrentTime));
 
     // exactly reachable
@@ -158,41 +160,31 @@ body
 {
     import std.exception : assertThrown;
 
-    auto xml = "<dp><st><da>19700101</da></st></dp>".readDocument.parseXPath("/dp").front;
+    auto xml = "<dp><st><da>19700101</da></st></dp>".toScheduleXmlNode;
     assert(xml.departureDate == Date(1970, 1, 1));
     
-    xml = "<dp><st><da>19700124</da></st></dp>".readDocument.parseXPath("/dp").front;
+    xml = "<dp><st><da>19700124</da></st></dp>".toScheduleXmlNode;
     assert(xml.departureDate == Date(1970, 1, 24));
     
-    xml = "<dp><st><da>19701101</da></st></dp>".readDocument.parseXPath("/dp").front;
+    xml = "<dp><st><da>19701101</da></st></dp>".toScheduleXmlNode;
     assert(xml.departureDate == Date(1970, 11, 1));
     
-    xml = "<dp><st><da>20180101</da></st></dp>".readDocument.parseXPath("/dp").front;
+    xml = "<dp><st><da>20180101</da></st></dp>".toScheduleXmlNode;
     assert(xml.departureDate == Date(2018, 1, 1));
 
-    xml = "<dp><st><da>20181124</da></st></dp>".readDocument.parseXPath("/dp").front;
+    xml = "<dp><st><da>20181124</da></st></dp>".toScheduleXmlNode;
     assert(xml.departureDate == Date(2018, 11, 24));
 
-    assertThrown!DateTimeException("<dp><st><da>00000000</da></st></dp>".readDocument.parseXPath("/dp")
-            .front.departureDate);
-    assertThrown!DateTimeException("<dp><st><da>00001300</da></st></dp>".readDocument.parseXPath("/dp")
-            .front.departureDate);
-    assertThrown!DateTimeException("<dp><st><da>00000032</da></st></dp>".readDocument.parseXPath("/dp")
-            .front.departureDate);
-    assertThrown!DateTimeException("<dp><st><da>20180229</da></st></dp>".readDocument.parseXPath("/dp")
-            .front.departureDate);
-    assertThrown!DateTimeException("<dp><st><da></da></st></dp>".readDocument.parseXPath("/dp")
-            .front.departureDate);
-    assertThrown!DateTimeException("<dp><st><da>11</da></st></dp>".readDocument.parseXPath("/dp")
-            .front.departureDate);
-    assertThrown!DateTimeException("<dp><st><da>201801011</da></st></dp>".readDocument.parseXPath("/dp")
-            .front.departureDate);
-    assertThrown!DateTimeException("<dp><st><da>2018.01.01</da></st></dp>".readDocument.parseXPath("/dp")
-            .front.departureDate);
-    assertThrown!DateTimeException("<dp><st><da>2018-a0-01</da></st></dp>".readDocument.parseXPath("/dp")
-            .front.departureDate);
-    assertThrown!CouldNotFindNodeException("<dp><st><t>00:00</t></st></dp>".readDocument.parseXPath("/dp")
-            .front.departureDate);
+    assertThrown!DateTimeException("<dp><st><da>00000000</da></st></dp>".toScheduleXmlNode.departureDate);
+    assertThrown!DateTimeException("<dp><st><da>00001300</da></st></dp>".toScheduleXmlNode.departureDate);
+    assertThrown!DateTimeException("<dp><st><da>00000032</da></st></dp>".toScheduleXmlNode.departureDate);
+    assertThrown!DateTimeException("<dp><st><da>20180229</da></st></dp>".toScheduleXmlNode.departureDate);
+    assertThrown!DateTimeException("<dp><st><da></da></st></dp>".toScheduleXmlNode.departureDate);
+    assertThrown!DateTimeException("<dp><st><da>11</da></st></dp>".toScheduleXmlNode.departureDate);
+    assertThrown!DateTimeException("<dp><st><da>201801011</da></st></dp>".toScheduleXmlNode.departureDate);
+    assertThrown!DateTimeException("<dp><st><da>2018.01.01</da></st></dp>".toScheduleXmlNode.departureDate);
+    assertThrown!DateTimeException("<dp><st><da>2018-a0-01</da></st></dp>".toScheduleXmlNode.departureDate);
+    assertThrown!CouldNotFindNodeException("<dp><st><t>00:00</t></st></dp>".toScheduleXmlNode.departureDate);
 }
 
 auto departureTime(string _timeNodeName = timeNodeName)(XmlNode dp)
@@ -213,39 +205,30 @@ body
 {
     import std.exception : assertThrown;
 
-    auto xml = "<dp><st><t>0000</t></st></dp>".readDocument.parseXPath("/dp").front;
+    auto xml = "<dp><st><t>0000</t></st></dp>".toScheduleXmlNode;
     assert(xml.departureTime == TimeOfDay(0, 0));
 
-    xml = "<dp><st><t>0013</t></st></dp>".readDocument.parseXPath("/dp").front;
+    xml = "<dp><st><t>0013</t></st></dp>".toScheduleXmlNode;
     assert(xml.departureTime == TimeOfDay(0, 13));
 
-    xml = "<dp><st><t>1100</t></st></dp>".readDocument.parseXPath("/dp").front;
+    xml = "<dp><st><t>1100</t></st></dp>".toScheduleXmlNode;
     assert(xml.departureTime == TimeOfDay(11, 00));
 
-    xml = "<dp><st><t>1242</t></st></dp>".readDocument.parseXPath("/dp").front;
+    xml = "<dp><st><t>1242</t></st></dp>".toScheduleXmlNode;
     assert(xml.departureTime == TimeOfDay(12, 42));
 
-    xml = "<dp><st><t>2359</t></st></dp>".readDocument.parseXPath("/dp").front;
+    xml = "<dp><st><t>2359</t></st></dp>".toScheduleXmlNode;
     assert(xml.departureTime == TimeOfDay(23, 59));
 
-    assertThrown!DateTimeException("<dp><st><t>2400</t></st></dp>".readDocument.parseXPath("/dp")
-            .front.departureTime);
-    assertThrown!DateTimeException("<dp><st><t>0061</t></st></dp>".readDocument.parseXPath("/dp")
-            .front.departureTime);
-    assertThrown!DateTimeException("<dp><st><t>2567</t></st></dp>".readDocument.parseXPath("/dp")
-            .front.departureTime);
-    assertThrown!DateTimeException("<dp><st><t></t></st></dp>".readDocument.parseXPath("/dp")
-            .front.departureTime);
-    assertThrown!DateTimeException("<dp><st><t>0</t></st></dp>".readDocument.parseXPath("/dp")
-            .front.departureTime);
-    assertThrown!DateTimeException("<dp><st><t>00</t></st></dp>".readDocument.parseXPath("/dp")
-            .front.departureTime);
-    assertThrown!DateTimeException("<dp><st><t>000000</t></st></dp>".readDocument.parseXPath("/dp")
-            .front.departureTime);
-    assertThrown!DateTimeException("<dp><st><t>00:00</t></st></dp>".readDocument.parseXPath("/dp")
-            .front.departureTime);
-    assertThrown!DateTimeException("<dp><st><t>abcd</t></st></dp>".readDocument.parseXPath("/dp")
-            .front.departureTime);
+    assertThrown!DateTimeException("<dp><st><t>2400</t></st></dp>".toScheduleXmlNode.departureTime);
+    assertThrown!DateTimeException("<dp><st><t>0061</t></st></dp>".toScheduleXmlNode.departureTime);
+    assertThrown!DateTimeException("<dp><st><t>2567</t></st></dp>".toScheduleXmlNode.departureTime);
+    assertThrown!DateTimeException("<dp><st><t></t></st></dp>".toScheduleXmlNode.departureTime);
+    assertThrown!DateTimeException("<dp><st><t>0</t></st></dp>".toScheduleXmlNode.departureTime);
+    assertThrown!DateTimeException("<dp><st><t>00</t></st></dp>".toScheduleXmlNode.departureTime);
+    assertThrown!DateTimeException("<dp><st><t>000000</t></st></dp>".toScheduleXmlNode.departureTime);
+    assertThrown!DateTimeException("<dp><st><t>00:00</t></st></dp>".toScheduleXmlNode.departureTime);
+    assertThrown!DateTimeException("<dp><st><t>abcd</t></st></dp>".toScheduleXmlNode.departureTime);
 }
 
 auto delay(XmlNode dp)
@@ -283,67 +266,64 @@ body
     import std.exception : assertThrown;
     import core.exception : AssertError;
 
-    auto xml = "<dp><realtime>0</realtime></dp>".readDocument.parseXPath("/dp").front;
+    auto xml = "<dp><realtime>0</realtime></dp>".toScheduleXmlNode;
     assert(xml.delay == dur!"minutes"(0));
 
-    xml = "<dp><realtime></realtime></dp>".readDocument.parseXPath("/dp").front;
+    xml = "<dp><realtime></realtime></dp>".toScheduleXmlNode;
     assertThrown!(UnexpectedValueException!string)(xml.delay);
 
-    xml = "<dp><realtime>2</realtime></dp>".readDocument.parseXPath("/dp").front;
+    xml = "<dp><realtime>2</realtime></dp>".toScheduleXmlNode;
     assertThrown!(UnexpectedValueException!string)(xml.delay);
 
-    xml = "<dp><realtime>a</realtime></dp>".readDocument.parseXPath("/dp").front;
+    xml = "<dp><realtime>a</realtime></dp>".toScheduleXmlNode;
     assertThrown!(UnexpectedValueException!string)(xml.delay);
 
-    xml = "<dp><realtime>1</realtime></dp>".readDocument.parseXPath("/dp").front;
+    xml = "<dp><realtime>1</realtime></dp>".toScheduleXmlNode;
     assert(xml.delay == dur!"seconds"(0));
 
-    xml = "<dp><realtime>1</realtime><st><t></t></st></dp>".readDocument.parseXPath("/dp").front;
+    xml = "<dp><realtime>1</realtime><st><t></t></st></dp>".toScheduleXmlNode;
     assertThrown!DateTimeException(xml.delay);
 
-    xml = "<dp><realtime>1</realtime><st><rt></rt></st></dp>".readDocument.parseXPath("/dp").front;
+    xml = "<dp><realtime>1</realtime><st><rt></rt></st></dp>".toScheduleXmlNode;
     assert(xml.delay == dur!"seconds"(0));
 
-    xml = "<dp><st><rt></rt><t></t></st></dp>".readDocument.parseXPath("/dp").front;
+    xml = "<dp><st><rt></rt><t></t></st></dp>".toScheduleXmlNode;
     assertThrown!AssertError(xml.delay);
 
-    xml = "<dp><realtime>1</realtime><st><rt></rt><t></t></st></dp>".readDocument.parseXPath("/dp")
-        .front;
+    xml = "<dp><realtime>1</realtime><st><rt></rt><t></t></st></dp>".toScheduleXmlNode;
     assertThrown!DateTimeException(xml.delay);
 
-    xml = "<dp><realtime>1</realtime><st><rt>0000</rt><t></t></st></dp>".readDocument.parseXPath("/dp")
-        .front;
+    xml = "<dp><realtime>1</realtime><st><rt>0000</rt><t></t></st></dp>".toScheduleXmlNode;
     assertThrown!DateTimeException(xml.delay);
 
-    xml = "<dp><realtime>1</realtime><st><rt></rt><t>0000</t></st></dp>".readDocument.parseXPath("/dp")
-        .front;
+    xml = "<dp><realtime>1</realtime><st><rt></rt><t>0000</t></st></dp>".toScheduleXmlNode;
     assertThrown!DateTimeException(xml.delay);
 
     xml = "<dp><realtime>1</realtime><st><rt>0000</rt><t>0000</t></st></dp>"
-        .readDocument.parseXPath("/dp").front;
+        .toScheduleXmlNode;
     assert(xml.delay == dur!"minutes"(0));
 
     xml = "<dp><realtime>1</realtime><st><rt>0001</rt><t>0000</t></st></dp>"
-        .readDocument.parseXPath("/dp").front;
+        .toScheduleXmlNode;
     assert(xml.delay == dur!"minutes"(1));
 
     xml = "<dp><realtime>1</realtime><st><rt>1753</rt><t>1751</t></st></dp>"
-        .readDocument.parseXPath("/dp").front;
+        .toScheduleXmlNode;
     assert(xml.delay == dur!"minutes"(2));
 
     xml = "<dp><realtime>1</realtime><st><rt>1010</rt><t>1000</t></st></dp>"
-        .readDocument.parseXPath("/dp").front;
+        .toScheduleXmlNode;
     assert(xml.delay == dur!"minutes"(10));
 
     xml = "<dp><realtime>1</realtime><st><rt>1301</rt><t>1242</t></st></dp>"
-        .readDocument.parseXPath("/dp").front;
+        .toScheduleXmlNode;
     assert(xml.delay == dur!"minutes"(19));
 
     xml = "<dp><realtime>1</realtime><st><rt>0000</rt><t>1242</t></st></dp>"
-        .readDocument.parseXPath("/dp").front;
+        .toScheduleXmlNode;
     assert(xml.delay == dur!"minutes"(678));
 
     xml = "<dp><realtime>1</realtime><st><rt>0000</rt><t>2359</t></st></dp>"
-        .readDocument.parseXPath("/dp").front;
+        .toScheduleXmlNode;
     assert(xml.delay == dur!"minutes"(1));
 }
