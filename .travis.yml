@@ -2,8 +2,10 @@
 language: d
 
 d:
+    - dmd
     - dmd-2.078.3
     - dmd-2.078.2
+    - ldc-1.8.0
 os:
     - linux
 env:
