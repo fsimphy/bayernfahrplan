@@ -10,14 +10,14 @@ import std.getopt : defaultGetoptPrinter, getopt;
 import std.json : JSONValue;
 import std.stdio : File, writeln;
 
-import substitution;
-
+private:
 enum ver = "v0.1.1";
 enum programName = "bayernfahrplan";
 
 enum baseURL = "http://mobile.defas-fgi.de/beg/";
 enum departureMonitorRequest = "XML_DM_REQUEST";
 
+public:
 void main(string[] args)
 {
     string fileName;

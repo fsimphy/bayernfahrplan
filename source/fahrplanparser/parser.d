@@ -1,4 +1,4 @@
-module fahrplanparser;
+module fahrplanparser.parser;
 
 import dxml.dom : DOMEntity, parseDOM;
 import dxml.util : normalize;
@@ -10,21 +10,10 @@ import std.conv : to;
 import std.datetime : DateTimeException, dur, TimeOfDay, DateTime, Clock;
 import std.string : format;
 
-import substitution : substitute;
+import fahrplanparser.substitution : substitute;
+import fahrplanparser.xmlconstants;
 
 private:
-
-enum efaNodeName = "efa";
-enum departuresNodeName = "dps";
-enum departureNodeName = "dp";
-enum timeNodeName = "t";
-enum dateNodeName = "da";
-enum realTimeNodeName = "rt";
-enum isoTimeNodeName = "st";
-enum useRealTimeNodeName = "realtime";
-enum lineNodeName = "nu";
-enum destinationNodeName = "des";
-enum busNodeName = "m";
 
 const DateTime currentDateTime;
 

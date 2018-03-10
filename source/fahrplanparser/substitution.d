@@ -1,4 +1,4 @@
-module substitution;
+module fahrplanparser.substitution;
 
 import fluent.asserts;
 
