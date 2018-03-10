@@ -12,36 +12,40 @@ import std.stdio : File, writeln;
 
 import substitution;
 
-enum ver ="v0.1.1";
+enum ver = "v0.1.1";
 enum programName = "bayernfahrplan";
 
 enum baseURL = "http://mobile.defas-fgi.de/beg/";
 enum departureMonitorRequest = "XML_DM_REQUEST";
-
 
 void main(string[] args)
 {
     string fileName;
     string busStop = "Regensburg Universität";
     string substitutionFileName = "replacement.txt";
+    int reachabilityThreshold;
     bool versionWanted;
     // dfmt off
     auto helpInformation = getopt(args,
         "file|f", "The file that the data is written to.", &fileName,
         "stop|s", "The bus stop for which to fetch data.", &busStop,
         "replacement-file|r", "The file that contais the direction name replacement info.", &substitutionFileName,
-        "version|v", "Display the version of this program.", &versionWanted);
+        "version|v", "Display the version of this program.", &versionWanted,
+        "walking-time|w", "Time (in minutes) to reach the station. Departures within this duration won't get printed.",
+            &reachabilityThreshold);
     // dfmt on
 
     if (helpInformation.helpWanted)
     {
-        defaultGetoptPrinter("Usage: bayernfahrplan [options]\n\n Options:", helpInformation.options);
+        defaultGetoptPrinter("Usage: bayernfahrplan [options]\n\n Options:",
+                helpInformation.options);
         return;
     }
 
-    if(versionWanted)
+    if (versionWanted)
     {
-        import std.stdio: writeln;
+        import std.stdio : writeln;
+
         writeln(programName, " ", ver);
         return;
     }
@@ -68,7 +72,8 @@ void main(string[] args)
 
     auto currentTime = Clock.currTime;
     JSONValue j = ["time" : "%02s:%02s".format(currentTime.hour, currentTime.minute)];
-    j.object["departures"] = (cast(string) content.data).parsedFahrplan.array.JSONValue;
+    j.object["departures"] = (cast(string) content.data)
+        .parsedFahrplan(reachabilityThreshold).array.JSONValue;
     auto output = j.toPrettyString.replace("\\/", "/");
     if (fileName !is null)
     {
