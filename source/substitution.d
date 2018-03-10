@@ -1,5 +1,7 @@
 module substitution;
 
+import fluent.asserts;
+
 import std.file : slurp;
 import std.meta : AliasSeq;
 import std.traits : Parameters;
@@ -20,54 +22,64 @@ void loadSubstitutionFile(alias slurpFun = slurp)(string fileName)
 }
 
 ///
-@safe unittest
+@system unittest
 {
     import std.typecons : Tuple, tuple;
 
-    static Tuple!(string, string)[] mockSlurpEmpty(Type1, Type2)(string filename, in char[] format)
+    static Tuple!(string, string)[] mockSlurpEmpty(Type1, Type2)(string, in char[])
     {
         return [];
     }
 
     loadSubstitutionFile!mockSlurpEmpty("");
-    assert(map.length == 0);
+    map.length.should.equal(0);
+}
 
-    static Tuple!(string, string)[] mockSlurpEmptyEntry(Type1, Type2)(string filename,
-            in char[] format)
+///
+@system unittest
+{
+    import std.typecons : Tuple, tuple;
+
+    static Tuple!(string, string)[] mockSlurpEmptyEntry(Type1, Type2)(string, in char[])
     {
         return [tuple("", "")];
     }
 
     loadSubstitutionFile!mockSlurpEmptyEntry("");
-    assert("" in map);
-    assert(map.length == 1);
-    assert(map[""] == "");
+    map.keys.should.containOnly([""]);
+    map[""].should.equal("");
+}
 
-    static Tuple!(string, string)[] mockSlurpSingleEntry(Type1, Type2)(string filename,
-            in char[] format)
+///
+@system unittest
+{
+    import std.typecons : Tuple, tuple;
+
+    static Tuple!(string, string)[] mockSlurpSingleEntry(Type1, Type2)(string, in char[])
     {
         return [tuple("foo", "bar")];
     }
 
     loadSubstitutionFile!mockSlurpSingleEntry("");
-    assert("foo" in map);
-    assert(map.length == 1);
-    assert(map["foo"] == "bar");
+    map.keys.should.containOnly(["foo"]);
+    map["foo"].should.equal("bar");
+}
 
-    static Tuple!(string, string)[] mockSlurpMultipleEntries(Type1, Type2)(
-            string filename, in char[] format)
+///
+@system unittest
+{
+    import std.typecons : Tuple, tuple;
+
+    static Tuple!(string, string)[] mockSlurpMultipleEntries(Type1, Type2)(string, in char[])
     {
         return [tuple("", ""), tuple("0", "1"), tuple("Text in", "wird durch diesen ersetzt")];
     }
 
     loadSubstitutionFile!mockSlurpMultipleEntries("");
-    assert("" in map);
-    assert("0" in map);
-    assert("Text in" in map);
-    assert(map.length == 3);
-    assert(map[""] == "");
-    assert(map["0"] == "1");
-    assert(map["Text in"] == "wird durch diesen ersetzt");
+    map.keys.should.containOnly(["", "0", "Text in"]);
+    map[""].should.equal("");
+    map["0"].should.equal("1");
+    map["Text in"].should.equal("wird durch diesen ersetzt");
 }
 
 /***********************************
@@ -81,23 +93,49 @@ auto substitute(string s) @safe nothrow
 }
 
 ///
-@safe unittest
+@system unittest
 {
+    map = (string[string]).init;
     map[""] = "";
-    assert(substitute("") == "");
+    substitute("").should.equal("");
+}
 
+///
+@system unittest
+{
+    map = (string[string]).init;
     map["a"] = "b";
-    assert(substitute("a") == "b");
+    substitute("a").should.equal("b");
+}
 
+///
+@system unittest
+{
+    map = (string[string]).init;
     map["Regensburg Danziger Freiheit"] = "Danziger Freiheit";
-    assert(substitute("Regensburg Danziger Freiheit") == "Danziger Freiheit");
+    substitute("Regensburg Danziger Freiheit").should.equal("Danziger Freiheit");
+}
 
+///
+@system unittest
+{
+    map = (string[string]).init;
     map["Regensburg Danziger Freiheit"] = "Anderer Test";
-    assert(substitute("Regensburg Danziger Freiheit") == "Anderer Test");
+    substitute("Regensburg Danziger Freiheit").should.equal("Anderer Test");
+}
 
-    assert(substitute("z") == "z");
+///
+@system unittest
+{
+    map = (string[string]).init;
+    substitute("z").should.equal("z");
+}
 
-    assert(substitute("Regensburg Hauptbahnhof") == "Regensburg Hauptbahnhof");
+///
+@system unittest
+{
+    map = (string[string]).init;
+    substitute("Regensburg Hauptbahnhof").should.equal("Regensburg Hauptbahnhof");
 }
 
 private:
