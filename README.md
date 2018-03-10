@@ -12,7 +12,7 @@ These instructions will get you a copy of the project up and running on your loc
 ### Prerequisites
 
 #### D compiler
-Either [DMD](https://dlang.org/download.html#dmd) or [LDC](https://github.com/ldc-developers/ldc#installation) is needed to compile the project. Additionally, the packagemanager [DUB](https://code.dlang.org/) is needed. Install via your distribution’s packagemanager if you are running linux or via [Homebrew](https://brew.sh/) if you are running OS X:
+Either [DMD](https://dlang.org/download.html#dmd) or [LDC](https://github.com/ldc-developers/ldc#installation) is needed to compile the project. The oldest supported version of DMD is 2.078.0 and the oldest support version of LDC is 1.8.0. Additionally, the packagemanager [DUB](https://code.dlang.org/) is needed. Install via your distribution’s packagemanager if you are running linux or via [Homebrew](https://brew.sh/) if you are running OS X:
 - Debian based systems:
 ```
 sudo wget http://master.dl.sourceforge.net/project/d-apt/files/d-apt.list -O /etc/apt/sources.list.d/d-apt.list
@@ -123,20 +123,20 @@ First install neccessary dependencies:
 ```
 sudo pacman -S llvm gcc ncurses zlib
 ```
-We will install LDC-1.6.0, which depens on `libtinfo`, which is contained in the `ncurses` package, but the version (`libtinfo.so.6.0`) is wrong (LDC needs `libtinfo.so.5`). It seems as though simply creating a symbolic link does the trick:
+We will install LDC-1.8.0, which depens on `libtinfo`, which is contained in the `ncurses` package, but the version (`libtinfo.so.6.0`) is wrong (LDC needs `libtinfo.so.5`). It seems as though simply creating a symbolic link does the trick:
 ```
 sudo ln -s /usr/lib/libtinfo.so /usr/lib/libtinfo.so.5
 ```
 Be aware that this is quite hacky and might cause problems later on. It might be better to install `libtinfo.so.5` manually.
 
-To install LDC-1.6.0 (and DUB), download and extract it in your home folder via the following commands:
+To install LDC-1.8.0 (and DUB), download and extract it in your home folder via the following commands:
 ```
-wget https://github.com/ldc-developers/ldc/releases/download/v1.6.0/ldc2-1.6.0-linux-armhf.tar.xz
-tar xf ldc2-1.6.0-linux-armhf.tar.xz
+wget https://github.com/ldc-developers/ldc/releases/download/v1.8.0/ldc2-1.8.0-linux-armhf.tar.xz
+tar xf ldc2-1.8.0-linux-armhf.tar.xz
 ```
 Then add it to your `PATH`:
 ```
-export PATH=~/ldc2-1.6.0-linux-armhf/bin
+export PATH=~/ldc2-1.8.0-linux-armhf/bin
 ```
 You might want to add the previous command to your `.bashrc` (or similar) file so you don't have to retype it every time you want to use DUB or LDC.
 
