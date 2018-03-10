@@ -1,15 +1,13 @@
 module fahrplanparser;
 
 import dxml.dom : DOMEntity, parseDOM;
-import dxml.parser : simpleXML;
 import dxml.util : normalize;
 
-import fluent.asserts;
+import fluent.asserts : should;
 
-import std.algorithm : map, joiner, filter;
-import std.array : empty, front;
+import std.algorithm : filter, joiner, map;
 import std.conv : to;
-import std.datetime : dur, TimeOfDay, DateTimeException;
+import std.datetime : DateTimeException, dur, TimeOfDay;
 import std.string : format;
 
 import substitution : substitute;
@@ -164,7 +162,7 @@ in
 {
     assert(dp.name == departureNodeName);
 }
-body
+do
 {
     auto timeNodes = dp.children.filter!(node => node.name == isoTimeNodeName)
         .map!(ISOTimeNode => ISOTimeNode.children.filter!(node => node.name == _timeNodeName)).joiner.map!(
@@ -375,7 +373,7 @@ in
 {
     assert(dp.name == departureNodeName);
 }
-body
+do
 {
     auto useRealTimeNodes = dp.children.filter!(node => node.name == useRealTimeNodeName)
         .map!(node => node.children).joiner;
