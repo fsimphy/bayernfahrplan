@@ -7,7 +7,7 @@ import fluent.asserts : should;
 
 import std.algorithm : filter, joiner, map;
 import std.conv : to;
-import std.datetime : DateTimeException, dur, TimeOfDay, DateTime, Clock;
+import std.datetime : DateTimeException, dur, TimeOfDay, DateTime, Clock, Date;
 import std.string : format;
 
 import fahrplanparser.substitution : substitute;
@@ -407,7 +407,6 @@ in
 }
 do
 {
-    import std.datetime.date : Date;
     auto dateNodes = dp.children.filter!(node => node.name == isoTimeNodeName)
         .map!(isoTimeNode => isoTimeNode.children.filter!(node => node.name == _dateNodeName))
         .joiner
@@ -422,7 +421,246 @@ do
     return Date.fromISOString(dateNodes.front.text);
 }
 
-// ToDo: Unittests
+@system
+{
+    unittest
+    {
+        (// dfmt off
+        "<?xml version='1.0' encoding='UTF-8'?>\n" ~
+        "<dp>\n" ~
+        "    <st>\n" ~
+        "        <da>00010101</da>\n" ~
+        "    </st>\n" ~
+        "</dp>"
+        // dfmt on
+        ).parseDOM.children.filter!(node => node.name == departureNodeName)
+            .front.departureDate.should.equal(Date(1,1,1));
+    }
+
+    unittest
+    {
+        (// dfmt off
+        "<?xml version='1.0' encoding='UTF-8'?>\n" ~
+        "<dp>\n" ~
+        "    <st>\n" ~
+        "        <da>20180101</da>\n" ~
+        "    </st>\n" ~
+        "</dp>"
+        // dfmt on
+        ).parseDOM.children.filter!(node => node.name == departureNodeName)
+            .front.departureDate.should.equal(Date(2018,1,1));
+    }
+
+    unittest
+    {
+        (// dfmt off
+        "<?xml version='1.0' encoding='UTF-8'?>\n" ~
+        "<dp>\n" ~
+        "    <st>\n" ~
+        "        <da>00011101</da>\n" ~
+        "    </st>\n" ~
+        "</dp>"
+        // dfmt on
+        ).parseDOM.children.filter!(node => node.name == departureNodeName)
+            .front.departureDate.should.equal(Date(1,11,1));
+    }
+
+    unittest
+    {
+        (// dfmt off
+        "<?xml version='1.0' encoding='UTF-8'?>\n" ~
+        "<dp>\n" ~
+        "    <st>\n" ~
+        "        <da>00010123</da>\n" ~
+        "    </st>\n" ~
+        "</dp>"
+        // dfmt on
+        ).parseDOM.children.filter!(node => node.name == departureNodeName)
+            .front.departureDate.should.equal(Date(1,1,23));
+    }
+
+    unittest
+    {
+        (// dfmt off
+        "<?xml version='1.0' encoding='UTF-8'?>\n" ~
+        "<dp>\n" ~
+        "    <st>\n" ~
+        "        <da>20180311</da>\n" ~
+        "    </st>\n" ~
+        "</dp>"
+        // dfmt on
+        ).parseDOM.children.filter!(node => node.name == departureNodeName)
+            .front.departureDate.should.equal(Date(2018,3,11));
+    }
+
+    unittest
+    {
+        (// dfmt off
+        "<?xml version='1.0' encoding='UTF-8'?>\n" ~
+        "<dp>\n" ~
+        "    <st>\n" ~
+        "        <da>20180131</da>\n" ~
+        "    </st>\n" ~
+        "</dp>"
+        // dfmt on
+        ).parseDOM.children.filter!(node => node.name == departureNodeName)
+            .front.departureDate.should.equal(Date(2018,1,31));
+    }
+
+    unittest
+    {
+        (// dfmt off
+        "<?xml version='1.0' encoding='UTF-8'?>\n" ~
+        "<dp>\n" ~
+        "    <st>\n" ~
+        "        <da>20180228</da>\n" ~
+        "    </st>\n" ~
+        "</dp>"
+        // dfmt on
+        ).parseDOM.children.filter!(node => node.name == departureNodeName)
+            .front.departureDate.should.equal(Date(2018,2,28));
+    }
+
+    unittest
+    {
+        (// dfmt off
+        "<?xml version='1.0' encoding='UTF-8'?>\n" ~
+        "<dp>\n" ~
+        "    <st>\n" ~
+        "        <da>20160229</da>\n" ~
+        "    </st>\n" ~
+        "</dp>"
+        // dfmt on
+        ).parseDOM.children.filter!(node => node.name == departureNodeName)
+            .front.departureDate.should.equal(Date(2016,2,29));
+    }
+
+    unittest
+    {
+        (// dfmt off
+        "<?xml version='1.0' encoding='UTF-8'?>\n" ~
+        "<dp>\n" ~
+        "    <st>\n" ~
+        "        <da>-00010101</da>\n" ~
+        "    </st>\n" ~
+        "</dp>"
+        // dfmt on
+        ).parseDOM.children.filter!(node => node.name == departureNodeName)
+            .front.departureDate.should.equal(Date(-1,1,1));
+    }
+
+    unittest
+    {
+        (// dfmt off
+        "<?xml version='1.0' encoding='UTF-8'?>\n" ~
+        "<dp>\n" ~
+        "    <st>\n" ~
+        "        <da>0001022</da>\n" ~
+        "    </st>\n" ~
+        "</dp>"
+        // dfmt on
+        ).parseDOM.children.filter!(node => node.name == departureNodeName)
+            .front.departureDate.should.throwException!DateTimeException;
+    }
+
+    unittest
+    {
+        (// dfmt off
+        "<?xml version='1.0' encoding='UTF-8'?>\n" ~
+        "<dp>\n" ~
+        "    <st>\n" ~
+        "        <da>00010002</da>\n" ~
+        "    </st>\n" ~
+        "</dp>"
+        // dfmt on
+        ).parseDOM.children.filter!(node => node.name == departureNodeName)
+            .front.departureDate.should.throwException!DateTimeException;
+    }
+
+    unittest
+    {
+        (// dfmt off
+        "<?xml version='1.0' encoding='UTF-8'?>\n" ~
+        "<dp>\n" ~
+        "    <st>\n" ~
+        "        <da>00011301</da>\n" ~
+        "    </st>\n" ~
+        "</dp>"
+        // dfmt on
+        ).parseDOM.children.filter!(node => node.name == departureNodeName)
+            .front.departureDate.should.throwException!DateTimeException;
+    }
+
+    unittest
+    {
+        (// dfmt off
+        "<?xml version='1.0' encoding='UTF-8'?>\n" ~
+        "<dp>\n" ~
+        "    <st>\n" ~
+        "        <da>00011301</da>\n" ~
+        "    </st>\n" ~
+        "</dp>"
+        // dfmt on
+        ).parseDOM.children.filter!(node => node.name == departureNodeName)
+            .front.departureDate.should.throwException!DateTimeException;
+    }
+
+    unittest
+    {
+        (// dfmt off
+        "<?xml version='1.0' encoding='UTF-8'?>\n" ~
+        "<dp>\n" ~
+        "    <st>\n" ~
+        "        <da>00010100</da>\n" ~
+        "    </st>\n" ~
+        "</dp>"
+        // dfmt on
+        ).parseDOM.children.filter!(node => node.name == departureNodeName)
+            .front.departureDate.should.throwException!DateTimeException;
+    }
+
+    unittest
+    {
+        (// dfmt off
+        "<?xml version='1.0' encoding='UTF-8'?>\n" ~
+        "<dp>\n" ~
+        "    <st>\n" ~
+        "        <da>00010132</da>\n" ~
+        "    </st>\n" ~
+        "</dp>"
+        // dfmt on
+        ).parseDOM.children.filter!(node => node.name == departureNodeName)
+            .front.departureDate.should.throwException!DateTimeException;
+    }
+
+    unittest
+    {
+        (// dfmt off
+        "<?xml version='1.0' encoding='UTF-8'?>\n" ~
+        "<dp>\n" ~
+        "    <st>\n" ~
+        "        <da>00011131</da>\n" ~
+        "    </st>\n" ~
+        "</dp>"
+        // dfmt on
+        ).parseDOM.children.filter!(node => node.name == departureNodeName)
+            .front.departureDate.should.throwException!DateTimeException;
+    }
+
+    unittest
+    {
+        (// dfmt off
+        "<?xml version='1.0' encoding='UTF-8'?>\n" ~
+        "<dp>\n" ~
+        "    <st>\n" ~
+        "        <da>00010229</da>\n" ~
+        "    </st>\n" ~
+        "</dp>"
+        // dfmt on
+        ).parseDOM.children.filter!(node => node.name == departureNodeName)
+            .front.departureDate.should.throwException!DateTimeException;
+    }
+}
 
 auto delay(DOMEntity!string dp)
 in
