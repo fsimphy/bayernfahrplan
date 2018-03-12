@@ -15,7 +15,7 @@ import fahrplanparser.xmlconstants;
 
 private:
 
-const DateTime currentDateTime;
+shared DateTime currentDateTime;
 
 static this()
 {
@@ -42,7 +42,7 @@ auto parsedFahrplan(string data, int reachabilityThreshold = 0)
         .filter!(node => node.name == efaNodeName)
         .map!(efa => efa.children).joiner.filter!(node => node.name == departuresNodeName)
         .map!(dps => dps.children).joiner.filter!(node => node.name == departureNodeName)
-        .filter!(dp => dp.isReachable(reachabilityThreshold))
+        .filter!(dp => dp.canBeReached(reachabilityThreshold))
         .map!(dp => [
             "line" : dp.children
                 .filter!(node => node.name == busNodeName)
@@ -662,6 +662,24 @@ do
     }
 }
 
+auto hasRealtimeData(DOMEntity!string dp) {
+    auto useRealTimeNodes = dp.children.filter!(node => node.name == useRealTimeNodeName)
+        .map!(node => node.children).joiner;
+    if (useRealTimeNodes.empty) {
+        return tupleof(realtimeDataState.MISSING, "");
+    }
+    immutable useRealTimeString = useRealTimeNodes.front.text;
+    if (useRealTimeString == "1") {
+        return tupleof(realtimeDataState.SET, useRealTimeString);
+    } else if (useRealTimeString == "0") {
+        return tupleof(realtimeDataState.UNSET, useRealTimeString);
+    } else {
+        throw new UnexpectedValueException!string(useRealTimeString, realTimeNodeName);
+    }
+}
+
+// TODO: unittest
+
 auto delay(DOMEntity!string dp)
 in
 {
@@ -669,14 +687,9 @@ in
 }
 do
 {
-    auto useRealTimeNodes = dp.children.filter!(node => node.name == useRealTimeNodeName)
-        .map!(node => node.children).joiner;
-    if (useRealTimeNodes.empty)
-        throw new CouldNotFindNodeWithContentException(useRealTimeNodeName);
-    immutable useRealTimeString = useRealTimeNodes.front.text;
-    if (useRealTimeString == "0")
+    if (dp.hasRealtimeData == realtimeDataState.UNSET)
         return dur!"minutes"(0);
-    else if (useRealTimeString == "1")
+    else if (dp.hasRealtimeData == realtimeDataState.SET)
     {
         try
         {
@@ -693,7 +706,9 @@ do
         }
     }
     else
-        throw new UnexpectedValueException!string(useRealTimeString, realTimeNodeName);
+    {
+        throw new UnexpectedValueException!string(, realTimeNodeName);
+    }
 }
 
 @system
@@ -964,16 +979,85 @@ do
     }
 }
 
-bool isReachable(DOMEntity!string dp, in int reachabilityThreshold,
+enum realtimeDataState {SET, UNSET, MISSING};
+
+bool canBeReached(DOMEntity!string dp, in int reachabilityThreshold,
         in DateTime currentTime = currentDateTime)
 {
     import std.datetime : minutes;
 
     auto reachingDuration = minutes(reachabilityThreshold);
 
-    auto departureDateTime = DateTime(dp.departureDate, dp.departureTime);
+    TimeOfDay departureTime;
+    // TODO: Incorporate Realtime!
+    if (dp.hasRealtimeData == realtimeDataState.SET) {
+        departureTime = dp.departureTime!realTimeNodeName;
+    } else {
+        departureTime = dp.departureTime;
+    }
+    auto departureDateTime = DateTime(dp.departureDate, departureTime);
 
     return departureDateTime - currentTime >= reachingDuration;
 }
 
-// TODO Unittests
+@system {
+    unittest
+    {
+        auto fakeDateTime = DateTime(Date(2018,01,01), TimeOfDay(12,37));
+        // dfmt off
+        auto intermed1 =
+        ("<?xml version='1.0' encoding='UTF-8'?>\n" ~
+        "<dp>\n" ~
+        "    <st>\n" ~
+        "        <t>1242</t>\n" ~
+        "        <da>20180101</da>\n" ~
+        "    </st>\n" ~
+        "    <m>\n" ~
+        "        <nu>6</nu>\n" ~
+        "        <des>Wernerwerkstraße</des>\n" ~
+        "    </m>\n" ~
+        "</dp>\n").parseDOM.children.filter!(node => node.name == departureNodeName)
+        .front;
+        auto intermed2 = intermed1.canBeReached(4, fakeDateTime);
+        intermed2.should.equal(true);
+        // dfmt on
+    }
+
+    unittest
+    {
+        auto fakeDateTime = DateTime(Date(2018,01,01), TimeOfDay(12,37));
+        // dfmt off
+        ("<?xml version='1.0' encoding='UTF-8'?>\n" ~
+        "<dp>\n" ~
+        "    <st>\n" ~
+        "        <t>1242</t>\n" ~
+        "        <da>20180101</da>\n" ~
+        "    </st>\n" ~
+        "    <m>\n" ~
+        "        <nu>6</nu>\n" ~
+        "        <des>Wernerwerkstraße</des>\n" ~
+        "    </m>\n" ~
+        "</dp>\n").parseDOM.children.filter!(node => node.name == departureNodeName)
+        .front.canBeReached(5, fakeDateTime).should.equal(false);
+        // dfmt on
+    }
+
+    unittest
+    {
+        auto fakeDateTime = DateTime(Date(2018,01,01), TimeOfDay(12,37));
+        // dfmt off
+        ("<?xml version='1.0' encoding='UTF-8'?>\n" ~
+        "<dp>\n" ~
+        "    <st>\n" ~
+        "        <t>1242</t>\n" ~
+        "        <da>20180101</da>\n" ~
+        "    </st>\n" ~
+        "    <m>\n" ~
+        "        <nu>6</nu>\n" ~
+        "        <des>Wernerwerkstraße</des>\n" ~
+        "    </m>\n" ~
+        "</dp>\n").parseDOM.children.filter!(node => node.name == departureNodeName)
+        .front.canBeReached(6, fakeDateTime).should.equal(false);
+        // dfmt on
+    }
+}
