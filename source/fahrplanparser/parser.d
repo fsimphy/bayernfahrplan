@@ -6,7 +6,7 @@ import dxml.util : normalize;
 import fluent.asserts : should;
 
 import std.algorithm : filter, joiner, map;
-import std.array : front, popFront;
+import std.array : empty, front, popFront;
 import std.conv : to;
 import std.datetime : DateTimeException, dur, TimeOfDay, DateTime, Clock, Date;
 import std.string : format;
@@ -53,7 +53,7 @@ do {
         "<n1>node1</n1>"
         // dfmt.on
         ).parseDOM.getSubnodesWithName("n1");
-        
+
         nodes.empty.should.equal(false);
         nodes.front.name.should.equal("n1");
         nodes.popFront;
@@ -74,7 +74,7 @@ do {
         ).parseDOM.getSubnodesWithName("n1")
         .front
         .getSubnodesWithName("n2");
-        
+
         nodes.empty.should.equal(false);
         auto node2_1 = nodes.front;
         node2_1.name.should.equal("n2");
@@ -174,6 +174,42 @@ do
         ).parseDOM
             .getFirstSubnodeWithName("n3")
             .should.throwException!CouldNotFindNodeWithContentException;
+    }
+}
+
+string extractText(T)(DOMEntity!T dom)
+{
+    auto childNodes = dom.children;
+    if (childNodes.empty) {
+        throw new CouldNotFindNodeWithContentException("text");
+    }
+    return childNodes.front.text;
+}
+
+@system
+{
+    unittest
+    {
+        (//dfmt off
+        "<?xml version='1.0' encoding='UTF-8'?>\n" ~
+        "<n1>testText</n1>"
+        //dfmt on
+        ).parseDOM
+        .getFirstSubnodeWithName("n1")
+        .extractText
+        .should.equal("testText");
+    }
+
+    unittest
+    {
+        (//dfmt off
+        "<?xml version='1.0' encoding='UTF-8'?>\n" ~
+        "<n1></n1>"
+        //dfmt on
+        ).parseDOM
+        .getFirstSubnodeWithName("n1")
+        .extractText
+        .should.throwException!CouldNotFindNodeWithContentException;
     }
 }
 
