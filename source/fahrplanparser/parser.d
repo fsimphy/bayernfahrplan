@@ -6,6 +6,7 @@ import dxml.util : normalize;
 import fluent.asserts : should;
 
 import std.algorithm : filter, joiner, map;
+import std.array : front, popFront;
 import std.conv : to;
 import std.datetime : DateTimeException, dur, TimeOfDay, DateTime, Clock, Date;
 import std.string : format;
@@ -30,6 +31,90 @@ static this()
 }
 
 public:
+
+auto getFirstSubnodeWithName(DOMEntity!string dom, string subnodeName)
+in
+{
+    assert(subnodeName != "");
+}
+do
+{
+    auto childs = dom.children
+        .filter!(node => node.name == subnodeName);
+    if (childs.empty) {
+        throw new CouldNotFindNodeWithContentException(subnodeName);
+    }
+    return childs.front;
+}
+
+@system
+{
+    unittest
+    {
+        (
+        // dfmt off
+        "<?xml version='1.0' encoding='UTF-8'?>\n" ~
+        "<n1>node1</n1>"
+        // dfmt.on
+        ).parseDOM.getFirstSubnodeWithName("n1")
+        .name
+        .should.equal("n1");
+    }
+
+    unittest
+    {
+        (
+        // dfmt off
+        "<?xml version='1.0' encoding='UTF-8'?>\n" ~
+        "<n1>\n" ~
+        "   <n2>node2</n2>\n" ~
+        "</n1>"
+        // dfmt.on
+        ).parseDOM
+        .getFirstSubnodeWithName("n1")
+        .getFirstSubnodeWithName("n2")
+        .name
+        .should.equal("n2");
+    }
+
+    unittest
+    {
+        auto node =
+        (
+        // dfmt off
+        "<?xml version='1.0' encoding='UTF-8'?>\n" ~
+        "<n1>\n" ~
+        "   <n2>node2-1</n2>\n" ~
+        "   <n2>node2-2</n2>\n" ~
+        "</n1>"
+        // dfmt.on
+        ).parseDOM
+            .getFirstSubnodeWithName("n1")
+            .getFirstSubnodeWithName("n2");
+        node.name
+            .should.equal("n2");
+        node.children
+            .front
+            .text
+            .should.equal("node2-1");
+    }
+
+
+    unittest
+    {
+        (
+        // dfmt off
+        "<?xml version='1.0' encoding='UTF-8'?>\n" ~
+        "<n1>\n" ~
+        "   <n2>node2-1</n2>\n" ~
+        "   <n2>node2-2</n2>\n" ~
+        "</n1>"
+        // dfmt.on
+        ).parseDOM
+            .getFirstSubnodeWithName("n3")
+            .should.throwException!CouldNotFindNodeWithContentException;
+    }
+}
 
 /***********************************
 * Parses the departure monitor data and returns it as an associative array.
@@ -203,7 +288,7 @@ do
     return TimeOfDay.fromISOString(timeNodes.front.text ~ "00");
 }
 
-@system 
+@system
 {
     unittest
     {
@@ -412,7 +497,7 @@ do
         .joiner
         .map!(node => node.children)
         .joiner;
-    
+
     if (dateNodes.empty)
     {
         throw new CouldNotFindNodeWithContentException(_dateNodeName);
