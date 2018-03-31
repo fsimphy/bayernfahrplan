@@ -968,4 +968,56 @@ bool isReachable(DOMEntity!string dp, in int reachabilityThreshold,
     return departureDateTime - currentTime >= reachingDuration;
 }
 
+@system
+{
+    unittest
+    {
+        (
+            //dfmt off
+            "<?xml version='1.0' charset='UTF-8'?>\n" ~
+            "<dp>" ~
+            "   <st>"~
+            "       <da>20180101</da>\n" ~
+            "       <t>0001</t>\n" ~
+            "   </st>" ~
+            "</dp>"
+            //dfmt on
+        ).parseDOM.getSubnodesWithName!"dp".front
+        .isReachable(1)
+        .should.equal(true);
+    }
+
+    unittest
+    {
+        (
+            //dfmt off
+            "<?xml version='1.0' charset='UTF-8'?>\n" ~
+            "<dp>" ~
+            "   <st>"~
+            "       <da>20180101</da>\n" ~
+            "       <t>0001</t>\n" ~
+            "   </st>" ~
+            "</dp>"
+            //dfmt on
+        ).parseDOM.getSubnodesWithName!"dp".front
+        .isReachable(2)
+        .should.equal(false);
+    }
+    unittest
+    {
+        (
+            //dfmt off
+            "<?xml version='1.0' charset='UTF-8'?>\n" ~
+            "<dp>" ~
+            "   <st>"~
+            "       <da>20180101</da>\n" ~
+            "       <t>0001</t>\n" ~
+            "   </st>" ~
+            "</dp>"
+            //dfmt on
+        ).parseDOM.getSubnodesWithName!"dp".front
+        .isReachable(0)
+        .should.equal(true);
+    }
+}
 // TODO Unittests
