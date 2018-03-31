@@ -6,9 +6,8 @@ import fluent.asserts : should;
 
 import std.algorithm : filter;
 import std.conv : to;
+import std.datetime : hours, minutes;
 import std.datetime.date : Date, DateTime, DateTimeException, TimeOfDay;
-import std.datetime.interval : dur;
-import std.datetime : minutes;
 
 import fahrplanparser.exceptions : CouldNotFindNodeWithContentException, UnexpectedValueException;
 import fahrplanparser.xmlconstants;
@@ -677,7 +676,7 @@ do
         throw new CouldNotFindNodeWithContentException(useRealTimeNodeName);
     }
     if (useRealTimeString == "0")
-        return dur!"minutes"(0);
+        return 0.minutes;
     else if (useRealTimeString == "1")
     {
         try
@@ -685,13 +684,13 @@ do
             immutable expectedTime = dp.departureTime;
             immutable realTime = dp.departureTime!realTimeNodeName;
             auto timeDiff = realTime - expectedTime;
-            if (timeDiff < dur!"minutes"(0))
-                timeDiff = dur!"hours"(24) + timeDiff;
+            if (timeDiff < 0.minutes)
+                timeDiff = 24.hours + timeDiff;
             return timeDiff;
         }
         catch (CouldNotFindNodeWithContentException e)
         {
-            return dur!"minutes"(0);
+            return 0.minutes;
         }
     }
     else
@@ -709,7 +708,7 @@ do
         "</dp>"
         // dfmt on
         ).parseDOM.children.filter!(node => node.name == departureNodeName)
-            .front.delay.should.equal(dur!"minutes"(0));
+            .front.delay.should.equal(0.minutes);
     }
 
     unittest
@@ -757,7 +756,7 @@ do
         "</dp>"
         // dfmt on
         ).parseDOM.children.filter!(node => node.name == departureNodeName)
-            .front.delay.should.equal(dur!"minutes"(0));
+            .front.delay.should.equal(0.minutes);
     }
 
     unittest
@@ -772,7 +771,7 @@ do
         "</dp>"
         // dfmt on
         ).parseDOM.children.filter!(node => node.name == departureNodeName)
-            .front.delay.should.equal(dur!"minutes"(0));
+            .front.delay.should.equal(0.minutes);
     }
 
     unittest
@@ -787,7 +786,7 @@ do
         "</dp>"
         // dfmt on
         ).parseDOM.children.filter!(node => node.name == departureNodeName)
-            .front.delay.should.equal(dur!"minutes"(0));
+            .front.delay.should.equal(0.minutes);
     }
 
     unittest
@@ -818,7 +817,7 @@ do
         "</dp>"
         // dfmt on
         ).parseDOM.children.filter!(node => node.name == departureNodeName)
-            .front.delay.should.equal(dur!"minutes"(0));
+            .front.delay.should.equal(0.minutes);
     }
 
     unittest
@@ -834,7 +833,7 @@ do
         "</dp>"
         // dfmt on
         ).parseDOM.children.filter!(node => node.name == departureNodeName)
-            .front.delay.should.equal(dur!"minutes"(0));
+            .front.delay.should.equal(0.minutes);
     }
 
     unittest
@@ -850,7 +849,7 @@ do
         "</dp>"
         // dfmt on
         ).parseDOM.children.filter!(node => node.name == departureNodeName)
-            .front.delay.should.equal(dur!"minutes"(0));
+            .front.delay.should.equal(0.minutes);
     }
 
     unittest
@@ -866,7 +865,7 @@ do
         "</dp>"
         // dfmt on
         ).parseDOM.children.filter!(node => node.name == departureNodeName)
-            .front.delay.should.equal(dur!"minutes"(0));
+            .front.delay.should.equal(0.minutes);
     }
 
     unittest
@@ -882,7 +881,7 @@ do
         "</dp>"
         // dfmt on
         ).parseDOM.children.filter!(node => node.name == departureNodeName)
-            .front.delay.should.equal(dur!"minutes"(1));
+            .front.delay.should.equal(1.minutes);
     }
 
     unittest
@@ -898,7 +897,7 @@ do
         "</dp>"
         // dfmt on
         ).parseDOM.children.filter!(node => node.name == departureNodeName)
-            .front.delay.should.equal(dur!"minutes"(2));
+            .front.delay.should.equal(2.minutes);
     }
 
     unittest
@@ -914,7 +913,7 @@ do
         "</dp>"
         // dfmt on
         ).parseDOM.children.filter!(node => node.name == departureNodeName)
-            .front.delay.should.equal(dur!"minutes"(10));
+            .front.delay.should.equal(10.minutes);
     }
 
     unittest
@@ -930,7 +929,7 @@ do
         "</dp>"
         // dfmt on
         ).parseDOM.children.filter!(node => node.name == departureNodeName)
-            .front.delay.should.equal(dur!"minutes"(19));
+            .front.delay.should.equal(19.minutes);
     }
 
     unittest
@@ -946,7 +945,7 @@ do
         "</dp>"
         // dfmt on
         ).parseDOM.children.filter!(node => node.name == departureNodeName)
-            .front.delay.should.equal(dur!"minutes"(678));
+            .front.delay.should.equal(678.minutes);
     }
 
     unittest
@@ -962,7 +961,7 @@ do
         "</dp>"
         // dfmt on
         ).parseDOM.children.filter!(node => node.name == departureNodeName)
-            .front.delay.should.equal(dur!"minutes"(1));
+            .front.delay.should.equal(1.minutes);
     }
 }
 
@@ -981,7 +980,7 @@ bool isReachable(DOMEntity!string dp, in int reachabilityThreshold,
 
 @system
 {
-    
+
     unittest
     {
         (
