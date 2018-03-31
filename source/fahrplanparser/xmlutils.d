@@ -229,11 +229,13 @@ do
 
 string extractText(T)(DOMEntity!T dom)
 {
+    import dxml.util : normalize, stripIndent;
+
     auto childNodes = dom.children;
     if (childNodes.empty) {
         throw new CouldNotFindNodeWithContentException("text");
     }
-    return childNodes.front.text;
+    return childNodes.front.text.normalize.stripIndent;
 }
 
 @system
@@ -248,6 +250,35 @@ string extractText(T)(DOMEntity!T dom)
         .getFirstSubnodeWithName!"n1"
         .extractText
         .should.equal("testText");
+    }
+
+    unittest
+    {
+        (//dfmt off
+        "<?xml version='1.0' encoding='UTF-8'?>\n" ~
+        "<n1>\n" ~
+        "    testText\n" ~
+        "</n1>"
+        //dfmt on
+        ).parseDOM
+        .getFirstSubnodeWithName!"n1"
+        .extractText
+        .should.equal("testText");
+    }
+
+    unittest
+    {
+        (//dfmt off
+        "<?xml version='1.0' encoding='UTF-8'?>\n" ~
+        "<n1>\n" ~
+        "    testText1\n" ~
+        "    testText2\n" ~
+        "</n1>\n"
+        //dfmt on
+        ).parseDOM
+        .getFirstSubnodeWithName!"n1"
+        .extractText
+        .should.equal("testText1\ntestText2");
     }
 
     unittest
