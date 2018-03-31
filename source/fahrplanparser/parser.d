@@ -45,17 +45,17 @@ auto parsedFahrplan(string data, int reachabilityThreshold = 0)
 
     import fahrplanparser.substitution : substitute;
 
-    return data.parseDOM.getSubnodesWithName(efaNodeName)
-        .getSubnodesWithName(departuresNodeName)
-        .getSubnodesWithName(departureNodeName)
+    return data.parseDOM.getSubnodesWithName!efaNodeName
+        .getSubnodesWithName!departuresNodeName
+        .getSubnodesWithName!departureNodeName
         .filter!(dp => dp.isReachable(reachabilityThreshold))
         .map!(dp => [
-            "line" : dp.getSubnodesWithName(busNodeName)
-                .getSubnodesWithName(lineNodeName)
+            "line" : dp.getSubnodesWithName!busNodeName
+                .getSubnodesWithName!lineNodeName
                 .getAllSubnodes
                 .front.text,
-            "direction" : dp.getSubnodesWithName(busNodeName)
-                .getSubnodesWithName(destinationNodeName)
+            "direction" : dp.getSubnodesWithName!busNodeName
+                .getSubnodesWithName!destinationNodeName
                 .getAllSubnodes
                 .front.text.normalize.substitute,
             "departure" : "%02s:%02s".format(dp.departureTime.hour, dp.departureTime.minute),
@@ -169,8 +169,8 @@ in
 }
 do
 {
-    auto timeNodes = dp.getSubnodesWithName(isoTimeNodeName)
-        .getSubnodesWithName(_timeNodeName)
+    auto timeNodes = dp.getSubnodesWithName!isoTimeNodeName
+        .getSubnodesWithName!_timeNodeName
         .getAllSubnodes;
 
     if (timeNodes.empty)
@@ -383,8 +383,8 @@ in
 }
 do
 {
-    auto dateNodes = dp.getSubnodesWithName(isoTimeNodeName)
-        .getSubnodesWithName(_dateNodeName)
+    auto dateNodes = dp.getSubnodesWithName!isoTimeNodeName
+        .getSubnodesWithName!_dateNodeName
         .getAllSubnodes;
 
     if (dateNodes.empty)
@@ -661,7 +661,7 @@ in
 }
 do
 {
-    auto useRealTimeNodes = dp.getSubnodesWithName(useRealTimeNodeName)
+    auto useRealTimeNodes = dp.getSubnodesWithName!useRealTimeNodeName
         .getAllSubnodes;
     if (useRealTimeNodes.empty)
         throw new CouldNotFindNodeWithContentException(useRealTimeNodeName);
