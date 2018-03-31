@@ -9,7 +9,85 @@ import std.array : empty, front, popFront;
 
 import fahrplanparser.exceptions : CouldNotFindNodeWithContentException;
 
+import std.range.primitives : isInputRange, ElementType;
+
 package:
+
+auto getAllSubnodes(T = string, U)(U domRange) if (isInputRange!U && is(ElementType!U == DOMEntity!T))
+{
+    import std.algorithm.iteration : map, joiner;
+    return domRange.map!(node => node.children).joiner;
+}
+
+@system
+{
+    unittest
+    {
+        auto subnodes =
+        (//dfmt off
+        "<?xml version='1.0' charset='UTF-8'?>" ~
+        "<n1>\n" ~
+        "   <n2>text1</n2>\n" ~
+        "   <n3>text2</n3>\n" ~
+        "</n1>"
+        //dfmt on
+        ).parseDOM.children
+        .getAllSubnodes;
+
+        subnodes.empty.should.equal(false);
+        auto node1 = subnodes.front;
+        node1.name.should.equal("n2");
+        subnodes.popFront;
+        subnodes.empty.should.equal(false);
+        auto node2 = subnodes.front;
+        node2.name.should.equal("n3");
+        subnodes.popFront;
+        subnodes.empty.should.equal(true);
+    }
+}
+
+auto getSubnodesWithName(T = string, U)(U domRange, string subnodeName)
+if (isInputRange!U && is(ElementType!U == DOMEntity!T))
+{
+    import std.algorithm.iteration : map, joiner;
+    return domRange.map!(domNode => domNode.getSubnodesWithName(subnodeName)).joiner;
+}
+
+@system
+{
+    unittest
+    {
+        import std.stdio;
+        auto subnodes = (//dfmt off
+        "<?xml version='1.0' encoding='UTF-8'?>\n" ~
+        "<n1>\n" ~
+        "   <n2>\n" ~
+        "       <sub>text1</sub>\n" ~
+        "   </n2>\n" ~
+        "   <n2>\n" ~
+        "       <sub>text2</sub>\n" ~
+        "   </n2>\n" ~
+        "</n1>"
+        //dfmt on
+        ).parseDOM.children.front
+        .getSubnodesWithName("n2")
+        .getSubnodesWithName("sub");
+
+        subnodes.empty.should.equal(false);
+        auto node1 = subnodes.front;
+        node1.name.should.equal("sub");
+        node1.extractText.should.equal("text1");
+        subnodes.popFront;
+
+        subnodes.empty.should.equal(false);
+        auto node2 = subnodes.front;
+        node2.name.should.equal("sub");
+        node2.extractText.should.equal("text2");
+
+        subnodes.popFront;
+        subnodes.empty.should.equal(true);
+    }
+}
 
 auto getSubnodesWithName(T)(DOMEntity!T dom, string subnodeName)
 in

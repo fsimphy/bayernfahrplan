@@ -5,7 +5,7 @@ import dxml.util : normalize;
 
 import fluent.asserts : should;
 
-import std.algorithm : filter, joiner, map;
+import std.algorithm : filter, joiner;
 import std.array : empty, front, popFront;
 import std.conv : to;
 import std.datetime : DateTimeException, dur, TimeOfDay, DateTime, Clock, Date;
@@ -14,7 +14,7 @@ import std.string : format;
 import fahrplanparser.exceptions : CouldNotFindNodeWithContentException, UnexpectedValueException;
 import fahrplanparser.substitution : substitute;
 import fahrplanparser.xmlconstants;
-import fahrplanparser.xmlutils : extractText, getSubnodesWithName;
+import fahrplanparser.xmlutils : extractText, getSubnodesWithName, getAllSubnodes;
 
 private:
 
@@ -40,19 +40,21 @@ public:
 
 auto parsedFahrplan(string data, int reachabilityThreshold = 0)
 {// dfmt off
+    import std.algorithm.iteration : map;
+
     return data.parseDOM.getSubnodesWithName(efaNodeName)
-        .map!(efa => efa.getSubnodesWithName(departuresNodeName)).joiner
-        .map!(dps => dps.getSubnodesWithName(departureNodeName)).joiner
+        .getSubnodesWithName(departuresNodeName)
+        .getSubnodesWithName(departureNodeName)
         .filter!(dp => dp.isReachable(reachabilityThreshold))
         .map!(dp => [
             "line" : dp.getSubnodesWithName(busNodeName)
-                .map!(busNodeName => busNodeName.getSubnodesWithName(lineNodeName))
-                .joiner.map!(node => node.children)
-                .joiner.front.text,
+                .getSubnodesWithName(lineNodeName)
+                .getAllSubnodes
+                .front.text,
             "direction" : dp.getSubnodesWithName(busNodeName)
-                .map!(busNodeName => busNodeName.getSubnodesWithName(destinationNodeName))
-                .joiner.map!(node => node.children)
-                .joiner.front.text.normalize.substitute,
+                .getSubnodesWithName(destinationNodeName)
+                .getAllSubnodes
+                .front.text.normalize.substitute,
             "departure" : "%02s:%02s".format(dp.departureTime.hour, dp.departureTime.minute),
             "delay" : dp.delay.total!"minutes".to!string]);
 // dfmt on
@@ -165,9 +167,8 @@ in
 do
 {
     auto timeNodes = dp.getSubnodesWithName(isoTimeNodeName)
-        .map!(isoTimeNode => isoTimeNode.getSubnodesWithName(_timeNodeName)).joiner
-        // Todo: Maybe util function
-        .map!(node => node.children).joiner;
+        .getSubnodesWithName(_timeNodeName)
+        .getAllSubnodes;
 
     if (timeNodes.empty)
         throw new CouldNotFindNodeWithContentException(_timeNodeName);
@@ -380,10 +381,8 @@ in
 do
 {
     auto dateNodes = dp.getSubnodesWithName(isoTimeNodeName)
-        .map!(isoTimeNode => isoTimeNode.getSubnodesWithName(_dateNodeName))
-        .joiner
-        .map!(node => node.children)
-        .joiner;
+        .getSubnodesWithName(_dateNodeName)
+        .getAllSubnodes;
 
     if (dateNodes.empty)
     {
@@ -660,7 +659,7 @@ in
 do
 {
     auto useRealTimeNodes = dp.getSubnodesWithName(useRealTimeNodeName)
-        .map!(node => node.children).joiner;
+        .getAllSubnodes;
     if (useRealTimeNodes.empty)
         throw new CouldNotFindNodeWithContentException(useRealTimeNodeName);
     immutable useRealTimeString = useRealTimeNodes.front.text;
