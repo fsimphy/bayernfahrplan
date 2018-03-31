@@ -14,6 +14,7 @@ import std.string : format;
 import fahrplanparser.exceptions : CouldNotFindNodeWithContentException, UnexpectedValueException;
 import fahrplanparser.substitution : substitute;
 import fahrplanparser.xmlconstants;
+import fahrplanparser.xmlutils : extractText, getSubnodesWithName;
 
 private:
 
@@ -39,22 +40,17 @@ public:
 
 auto parsedFahrplan(string data, int reachabilityThreshold = 0)
 {// dfmt off
-    return data.parseDOM.children
-        .filter!(node => node.name == efaNodeName)
-        .map!(efa => efa.children).joiner.filter!(node => node.name == departuresNodeName)
-        .map!(dps => dps.children).joiner.filter!(node => node.name == departureNodeName)
+    return data.parseDOM.getSubnodesWithName(efaNodeName)
+        .map!(efa => efa.getSubnodesWithName(departuresNodeName)).joiner
+        .map!(dps => dps.getSubnodesWithName(departureNodeName)).joiner
         .filter!(dp => dp.isReachable(reachabilityThreshold))
         .map!(dp => [
-            "line" : dp.children
-                .filter!(node => node.name == busNodeName)
-                .map!(busNodeName => busNodeName.children
-                    .filter!(node => node.name == lineNodeName))
+            "line" : dp.getSubnodesWithName(busNodeName)
+                .map!(busNodeName => busNodeName.getSubnodesWithName(lineNodeName))
                 .joiner.map!(node => node.children)
                 .joiner.front.text,
-            "direction" : dp.children
-                .filter!(node => node.name == busNodeName)
-                .map!(busNodeName => busNodeName.children
-                    .filter!(node => node.name == destinationNodeName))
+            "direction" : dp.getSubnodesWithName(busNodeName)
+                .map!(busNodeName => busNodeName.getSubnodesWithName(destinationNodeName))
                 .joiner.map!(node => node.children)
                 .joiner.front.text.normalize.substitute,
             "departure" : "%02s:%02s".format(dp.departureTime.hour, dp.departureTime.minute),
@@ -168,9 +164,10 @@ in
 }
 do
 {
-    auto timeNodes = dp.children.filter!(node => node.name == isoTimeNodeName)
-        .map!(ISOTimeNode => ISOTimeNode.children.filter!(node => node.name == _timeNodeName)).joiner.map!(
-                node => node.children).joiner;
+    auto timeNodes = dp.getSubnodesWithName(isoTimeNodeName)
+        .map!(isoTimeNode => isoTimeNode.getSubnodesWithName(_timeNodeName)).joiner
+        // Todo: Maybe util function
+        .map!(node => node.children).joiner;
 
     if (timeNodes.empty)
         throw new CouldNotFindNodeWithContentException(_timeNodeName);
@@ -382,8 +379,8 @@ in
 }
 do
 {
-    auto dateNodes = dp.children.filter!(node => node.name == isoTimeNodeName)
-        .map!(isoTimeNode => isoTimeNode.children.filter!(node => node.name == _dateNodeName))
+    auto dateNodes = dp.getSubnodesWithName(isoTimeNodeName)
+        .map!(isoTimeNode => isoTimeNode.getSubnodesWithName(_dateNodeName))
         .joiner
         .map!(node => node.children)
         .joiner;
@@ -644,7 +641,7 @@ in
 }
 do
 {
-    auto useRealTimeNodes = dp.children.filter!(node => node.name == useRealTimeNodeName)
+    auto useRealTimeNodes = dp.getSubnodesWithName(useRealTimeNodeName)
         .map!(node => node.children).joiner;
     if (useRealTimeNodes.empty)
         throw new CouldNotFindNodeWithContentException(useRealTimeNodeName);
