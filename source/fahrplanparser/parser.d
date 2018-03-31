@@ -632,6 +632,24 @@ do
         ).parseDOM.children.filter!(node => node.name == departureNodeName)
             .front.departureDate.should.throwException!DateTimeException;
     }
+
+
+    unittest
+    {
+        (// dfmt off
+        "<?xml version='1.0' encoding='UTF-8'?>\n" ~
+        "<dp>\n" ~
+        "    <st>\n" ~
+        "        <da></da>\n" ~
+        "    </st>\n" ~
+        "</dp>"
+        // dfmt on
+        ).parseDOM.children
+        .filter!(node => node.name == departureNodeName)
+        .front
+        .departureDate
+        .should.throwException!CouldNotFindNodeWithContentException;
+    }
 }
 
 auto delay(DOMEntity!string dp)
