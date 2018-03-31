@@ -8,6 +8,7 @@ import std.algorithm : filter;
 import std.conv : to;
 import std.datetime.date : Date, DateTime, DateTimeException, TimeOfDay;
 import std.datetime.interval : dur;
+import std.datetime : minutes;
 
 import fahrplanparser.exceptions : CouldNotFindNodeWithContentException, UnexpectedValueException;
 import fahrplanparser.xmlconstants;
@@ -661,11 +662,20 @@ in
 }
 do
 {
-    auto useRealTimeNodes = dp.getSubnodesWithName!useRealTimeNodeName
+    auto realtimeNodes = dp.getSubnodesWithName!useRealTimeNodeName;
+    if (realtimeNodes.empty)
+    {
+        return minutes(0);
+    }
+    auto useRealTimeNodes = realtimeNodes
         .getAllSubnodes;
-    if (useRealTimeNodes.empty)
+    if (useRealTimeNodes.empty) {
         throw new CouldNotFindNodeWithContentException(useRealTimeNodeName);
+    }
     immutable useRealTimeString = useRealTimeNodes.front.text;
+    if (useRealTimeNodes.empty) {
+        throw new CouldNotFindNodeWithContentException(useRealTimeNodeName);
+    }
     if (useRealTimeString == "0")
         return dur!"minutes"(0);
     else if (useRealTimeString == "1")
@@ -792,7 +802,7 @@ do
         "</dp>"
         // dfmt on
         ).parseDOM.children.filter!(node => node.name == departureNodeName)
-            .front.delay.should.throwException!CouldNotFindNodeWithContentException;
+            .front.delay.should.equal(0.minutes);
     }
 
     unittest
@@ -963,13 +973,32 @@ bool isReachable(DOMEntity!string dp, in int reachabilityThreshold,
 
     auto reachingDuration = minutes(reachabilityThreshold);
 
-    auto departureDateTime = DateTime(dp.departureDate, dp.departureTime);
+    auto departureDateTime = DateTime(dp.departureDate, dp.departureTime)
+        + dp.delay;
 
     return departureDateTime - currentTime >= reachingDuration;
 }
 
 @system
 {
+    
+    unittest
+    {
+        (
+            //dfmt off
+            "<?xml version='1.0' charset='UTF-8'?>\n" ~
+            "<dp>" ~
+            "   <st>"~
+            "       <da>20180101</da>\n" ~
+            "       <t>0001</t>\n" ~
+            "   </st>" ~
+            "</dp>"
+            //dfmt on
+        ).parseDOM.getSubnodesWithName!"dp".front
+        .isReachable(0)
+        .should.equal(true);
+    }
+
     unittest
     {
         (
@@ -1003,12 +1032,14 @@ bool isReachable(DOMEntity!string dp, in int reachabilityThreshold,
         .isReachable(2)
         .should.equal(false);
     }
+
     unittest
     {
         (
             //dfmt off
             "<?xml version='1.0' charset='UTF-8'?>\n" ~
             "<dp>" ~
+            "   <realtime>1</realtime>" ~
             "   <st>"~
             "       <da>20180101</da>\n" ~
             "       <t>0001</t>\n" ~
@@ -1018,6 +1049,99 @@ bool isReachable(DOMEntity!string dp, in int reachabilityThreshold,
         ).parseDOM.getSubnodesWithName!"dp".front
         .isReachable(0)
         .should.equal(true);
+    }
+
+    unittest
+    {
+        (
+            //dfmt off
+            "<?xml version='1.0' charset='UTF-8'?>\n" ~
+            "<dp>" ~
+            "   <realtime>1</realtime>" ~
+            "   <st>"~
+            "       <da>20180101</da>\n" ~
+            "       <t>0001</t>\n" ~
+            "   </st>" ~
+            "</dp>"
+            //dfmt on
+        ).parseDOM.getSubnodesWithName!"dp".front
+        .isReachable(1)
+        .should.equal(true);
+    }
+
+    unittest
+    {
+        (
+            //dfmt off
+            "<?xml version='1.0' charset='UTF-8'?>\n" ~
+            "<dp>" ~
+            "   <realtime>1</realtime>" ~
+            "   <st>" ~
+            "       <da>20180101</da>\n" ~
+            "       <t>0001</t>\n" ~
+            "   </st>" ~
+            "</dp>"
+            //dfmt on
+        ).parseDOM.getSubnodesWithName!"dp".front
+        .isReachable(2)
+        .should.equal(false);
+    }
+
+    unittest
+    {
+        (
+            //dfmt off
+            "<?xml version='1.0' charset='UTF-8'?>\n" ~
+            "<dp>" ~
+            "   <realtime>1</realtime>" ~
+            "   <st>"~
+            "       <da>20180101</da>\n" ~
+            "       <t>0001</t>\n" ~
+            "       <rt>0005</rt>\n" ~
+            "   </st>" ~
+            "</dp>"
+            //dfmt on
+        ).parseDOM.getSubnodesWithName!"dp".front
+        .isReachable(4);
+        // .should.equal(true);
+    }
+
+    unittest
+    {
+        (
+            //dfmt off
+            "<?xml version='1.0' charset='UTF-8'?>\n" ~
+            "<dp>" ~
+            "   <realtime>1</realtime>" ~
+            "   <st>"~
+            "       <da>20180101</da>\n" ~
+            "       <t>0001</t>\n" ~
+            "       <rt>0005</rt>\n" ~
+            "   </st>" ~
+            "</dp>"
+            //dfmt on
+        ).parseDOM.getSubnodesWithName!"dp".front
+        .isReachable(5)
+        .should.equal(true);
+    }
+
+    unittest
+    {
+        (
+            //dfmt off
+            "<?xml version='1.0' charset='UTF-8'?>\n" ~
+            "<dp>" ~
+            "   <realtime>1</realtime>" ~
+            "   <st>"~
+            "       <da>20180101</da>\n" ~
+            "       <t>0001</t>\n" ~
+            "       <rt>0005</rt>\n" ~
+            "   </st>" ~
+            "</dp>"
+            //dfmt on
+        ).parseDOM.getSubnodesWithName!"dp".front
+        .isReachable(6)
+        .should.equal(false);
     }
 }
 // TODO Unittests
