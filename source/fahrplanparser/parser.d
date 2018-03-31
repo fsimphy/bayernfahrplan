@@ -1,20 +1,17 @@
 module fahrplanparser.parser;
 
 import dxml.dom : DOMEntity, parseDOM;
-import dxml.util : normalize;
 
 import fluent.asserts : should;
 
-import std.algorithm : filter, joiner;
-import std.array : empty, front, popFront;
+import std.algorithm : filter;
 import std.conv : to;
-import std.datetime : DateTimeException, dur, TimeOfDay, DateTime, Clock, Date;
-import std.string : format;
+import std.datetime.date : Date, DateTime, DateTimeException, TimeOfDay;
+import std.datetime.interval : dur;
 
 import fahrplanparser.exceptions : CouldNotFindNodeWithContentException, UnexpectedValueException;
-import fahrplanparser.substitution : substitute;
 import fahrplanparser.xmlconstants;
-import fahrplanparser.xmlutils : extractText, getSubnodesWithName, getAllSubnodes;
+import fahrplanparser.xmlutils : getSubnodesWithName, getAllSubnodes;
 
 private:
 
@@ -28,6 +25,7 @@ static this()
     }
     else
     {
+        import std.datetime.systime : Clock;
         currentDateTime = Clock.currTime.to!DateTime;
     }
 }
@@ -41,6 +39,11 @@ public:
 auto parsedFahrplan(string data, int reachabilityThreshold = 0)
 {// dfmt off
     import std.algorithm.iteration : map;
+    import std.format : format;
+
+    import dxml.util : normalize;
+
+    import fahrplanparser.substitution : substitute;
 
     return data.parseDOM.getSubnodesWithName(efaNodeName)
         .getSubnodesWithName(departuresNodeName)
