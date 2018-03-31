@@ -4,3 +4,6 @@ coverage:
       default:
         url: "https://webhooks.gitter.im/e/bbebe195871b946b0fac"
         threshold: 1%
+  range: 50..80
+  round: up
+  precision: 2
