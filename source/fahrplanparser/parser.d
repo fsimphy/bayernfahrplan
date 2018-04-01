@@ -260,7 +260,8 @@ do
         "    <st>\n" ~
         "        <t>2400</t>\n" ~
         "    </st>\n" ~
-        "</dp>"    // dfmt on
+        "</dp>"
+        // dfmt on
         ).parseDOM.children.filter!(node => node.name == departureNodeName)
             .front.departureTime.should.throwException!DateTimeException;
     }
@@ -372,6 +373,7 @@ do
         "        <t>abcd</t>\n" ~
         "    </st>\n" ~
         "</dp>"
+        // dfmt on
         ).parseDOM.children.filter!(node => node.name == departureNodeName)
             .front.departureTime.should.throwException!DateTimeException;
     }
@@ -385,8 +387,7 @@ in
 do
 {
     auto dateNodes = dp.getSubnodesWithName!isoTimeNodeName
-        .getSubnodesWithName!_dateNodeName
-        .getAllSubnodes;
+        .getSubnodesWithName!_dateNodeName.getAllSubnodes;
 
     if (dateNodes.empty)
     {
@@ -1078,8 +1079,7 @@ bool isReachable(DOMEntity!string dp, in int reachabilityThreshold,
             "   </st>" ~
             "</dp>"
             //dfmt on
-        ).parseDOM.getSubnodesWithName!"dp".front.isReachable(4);
-        // .should.equal(true);
+        ).parseDOM.getSubnodesWithName!"dp".front.isReachable(4).should.equal(true);
     }
 
     unittest
@@ -1114,4 +1114,3 @@ bool isReachable(DOMEntity!string dp, in int reachabilityThreshold,
         ).parseDOM.getSubnodesWithName!"dp".front.isReachable(6).should.equal(false);
     }
 }
-// TODO Unittests

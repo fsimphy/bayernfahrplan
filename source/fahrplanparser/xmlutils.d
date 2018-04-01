@@ -100,7 +100,7 @@ auto getSubnodesWithName(string subnodeName, T)(DOMEntity!T dom)
         auto nodes = (// dfmt off
         "<?xml version='1.0' encoding='UTF-8'?>\n" ~
         "<n1>node1</n1>"
-        // dfmt.on
+        // dfmt on
         ).parseDOM.getSubnodesWithName!"n1";
 
         nodes.empty.should.equal(false);
@@ -111,18 +111,14 @@ auto getSubnodesWithName(string subnodeName, T)(DOMEntity!T dom)
 
     unittest
     {
-        auto nodes =
-        (
-        // dfmt off
+        auto nodes = (// dfmt off
         "<?xml version='1.0' encoding='UTF-8'?>\n" ~
         "<n1>\n" ~
         "   <n2>text1</n2>\n" ~
         "   <n2>text2</n2>\n" ~
         "</n1>"
-        // dfmt.on
-        ).parseDOM.getSubnodesWithName!"n1"
-        .front
-        .getSubnodesWithName!"n2";
+        // dfmt on
+        ).parseDOM.getSubnodesWithName!"n1".front.getSubnodesWithName!"n2";
 
         nodes.empty.should.equal(false);
         auto node2_1 = nodes.front;
@@ -144,10 +140,11 @@ auto getSubnodesWithName(string subnodeName, T)(DOMEntity!T dom)
  * If none is found, throws a CouldNotFindNodeWithContentException.
  */
 auto getFirstSubnodeWithName(string subnodeName, T)(DOMEntity!T dom)
-if (subnodeName != "")
+        if (subnodeName != "")
 {
     auto childs = dom.getSubnodesWithName!subnodeName;
-    if (childs.empty) {
+    if (childs.empty)
+    {
         throw new CouldNotFindNodeWithContentException(subnodeName);
     }
     return childs.front;
@@ -157,68 +154,50 @@ if (subnodeName != "")
 {
     unittest
     {
-        (
-        // dfmt off
+        (// dfmt off
         "<?xml version='1.0' encoding='UTF-8'?>\n" ~
         "<n1>node1</n1>"
-        // dfmt.on
-        ).parseDOM.getFirstSubnodeWithName!"n1"
-        .name
-        .should.equal("n1");
+        // dfmt on
+        ).parseDOM.getFirstSubnodeWithName!"n1".name.should.equal("n1");
     }
 
     unittest
     {
-        (
-        // dfmt off
+        (// dfmt off
         "<?xml version='1.0' encoding='UTF-8'?>\n" ~
         "<n1>\n" ~
         "   <n2>node2</n2>\n" ~
         "</n1>"
-        // dfmt.on
-        ).parseDOM
-        .getFirstSubnodeWithName!"n1"
-        .getFirstSubnodeWithName!"n2"
-        .name
-        .should.equal("n2");
+        // dfmt on
+        ).parseDOM.getFirstSubnodeWithName!"n1".getFirstSubnodeWithName!"n2".name.should.equal(
+                "n2");
     }
 
     unittest
     {
-        auto node =
-        (
-        // dfmt off
+        auto node = (// dfmt off
         "<?xml version='1.0' encoding='UTF-8'?>\n" ~
         "<n1>\n" ~
         "   <n2>node2-1</n2>\n" ~
         "   <n2>node2-2</n2>\n" ~
         "</n1>"
-        // dfmt.on
-        ).parseDOM
-            .getFirstSubnodeWithName!"n1"
-            .getFirstSubnodeWithName!"n2";
-        node.name
-            .should.equal("n2");
-        node.children
-            .front
-            .text
-            .should.equal("node2-1");
+        // dfmt on
+        ).parseDOM.getFirstSubnodeWithName!"n1".getFirstSubnodeWithName!"n2";
+        node.name.should.equal("n2");
+        node.children.front.text.should.equal("node2-1");
     }
-
 
     unittest
     {
-        (
-        // dfmt off
+        (// dfmt off
         "<?xml version='1.0' encoding='UTF-8'?>\n" ~
         "<n1>\n" ~
         "   <n2>node2-1</n2>\n" ~
         "   <n2>node2-2</n2>\n" ~
         "</n1>"
-        // dfmt.on
-        ).parseDOM
-            .getFirstSubnodeWithName!"n3"
-            .should.throwException!CouldNotFindNodeWithContentException;
+        // dfmt on
+        ).parseDOM.getFirstSubnodeWithName!"n3".should
+            .throwException!CouldNotFindNodeWithContentException;
     }
 }
 
@@ -227,7 +206,8 @@ string extractText(T)(DOMEntity!T dom)
     import dxml.util : normalize, stripIndent;
 
     auto childNodes = dom.children;
-    if (childNodes.empty) {
+    if (childNodes.empty)
+    {
         throw new CouldNotFindNodeWithContentException("text");
     }
     return childNodes.front.text.normalize.stripIndent;
