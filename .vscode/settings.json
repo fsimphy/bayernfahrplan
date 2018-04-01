@@ -1,0 +1,10 @@
+{
+    "dfmt.alignSwitchStatements": true,
+    "dfmt.braceStyle": "allman",
+    "dfmt.compactLabeledStatements": true,
+    "dfmt.outdentAttributes": true,
+    "dfmt.selectiveImportSpace": true,
+    "dfmt.spaceAfterCast": true,
+    "dfmt.splitOperatorAtLineEnd": false,
+    "dfmt.templateConstraintStyle": "conditional_newline_indent",
+}

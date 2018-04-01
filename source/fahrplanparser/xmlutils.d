@@ -13,9 +13,11 @@ import std.range.primitives : isInputRange, ElementType;
 
 package:
 
-auto getAllSubnodes(T = string, U)(U domRange) if (isInputRange!U && is(ElementType!U == DOMEntity!T))
+auto getAllSubnodes(T = string, U)(U domRange)
+        if (isInputRange!U && is(ElementType!U == DOMEntity!T))
 {
     import std.algorithm.iteration : map, joiner;
+
     return domRange.map!(node => node.children).joiner;
 }
 
@@ -23,16 +25,14 @@ auto getAllSubnodes(T = string, U)(U domRange) if (isInputRange!U && is(ElementT
 {
     unittest
     {
-        auto subnodes =
-        (//dfmt off
+        auto subnodes = (//dfmt off
         "<?xml version='1.0' charset='UTF-8'?>" ~
         "<n1>\n" ~
         "   <n2>text1</n2>\n" ~
         "   <n3>text2</n3>\n" ~
         "</n1>"
         //dfmt on
-        ).parseDOM.children
-        .getAllSubnodes;
+        ).parseDOM.children.getAllSubnodes;
 
         subnodes.empty.should.equal(false);
         auto node1 = subnodes.front;
@@ -47,9 +47,10 @@ auto getAllSubnodes(T = string, U)(U domRange) if (isInputRange!U && is(ElementT
 }
 
 auto getSubnodesWithName(string subnodeName, T = string, U)(U domRange)
-if (isInputRange!U && is(ElementType!U == DOMEntity!T))
+        if (isInputRange!U && is(ElementType!U == DOMEntity!T))
 {
     import std.algorithm.iteration : map, joiner;
+
     return domRange.map!(domNode => domNode.getSubnodesWithName!subnodeName).joiner;
 }
 
@@ -68,9 +69,7 @@ if (isInputRange!U && is(ElementType!U == DOMEntity!T))
         "   </n2>\n" ~
         "</n1>"
         //dfmt on
-        ).parseDOM.children.front
-        .getSubnodesWithName!"n2"
-        .getSubnodesWithName!"sub";
+        ).parseDOM.children.front.getSubnodesWithName!"n2".getSubnodesWithName!"sub";
 
         subnodes.empty.should.equal(false);
         auto node1 = subnodes.front;
@@ -89,19 +88,16 @@ if (isInputRange!U && is(ElementType!U == DOMEntity!T))
 }
 
 auto getSubnodesWithName(string subnodeName, T)(DOMEntity!T dom)
-if (subnodeName != "")
-do {
-    return dom.children
-        .filter!(node => node.name == subnodeName);
+        if (subnodeName != "")
+{
+    return dom.children.filter!(node => node.name == subnodeName);
 }
 
 @system
 {
     unittest
     {
-        auto nodes =
-        (
-        // dfmt off
+        auto nodes = (// dfmt off
         "<?xml version='1.0' encoding='UTF-8'?>\n" ~
         "<n1>node1</n1>"
         // dfmt.on
@@ -149,7 +145,6 @@ do {
  */
 auto getFirstSubnodeWithName(string subnodeName, T)(DOMEntity!T dom)
 if (subnodeName != "")
-do
 {
     auto childs = dom.getSubnodesWithName!subnodeName;
     if (childs.empty) {
@@ -246,10 +241,7 @@ string extractText(T)(DOMEntity!T dom)
         "<?xml version='1.0' encoding='UTF-8'?>\n" ~
         "<n1>testText</n1>"
         //dfmt on
-        ).parseDOM
-        .getFirstSubnodeWithName!"n1"
-        .extractText
-        .should.equal("testText");
+        ).parseDOM.getFirstSubnodeWithName!"n1".extractText.should.equal("testText");
     }
 
     unittest
@@ -260,10 +252,7 @@ string extractText(T)(DOMEntity!T dom)
         "    testText\n" ~
         "</n1>"
         //dfmt on
-        ).parseDOM
-        .getFirstSubnodeWithName!"n1"
-        .extractText
-        .should.equal("testText");
+        ).parseDOM.getFirstSubnodeWithName!"n1".extractText.should.equal("testText");
     }
 
     unittest
@@ -275,10 +264,7 @@ string extractText(T)(DOMEntity!T dom)
         "    testText2\n" ~
         "</n1>\n"
         //dfmt on
-        ).parseDOM
-        .getFirstSubnodeWithName!"n1"
-        .extractText
-        .should.equal("testText1\ntestText2");
+        ).parseDOM.getFirstSubnodeWithName!"n1".extractText.should.equal("testText1\ntestText2");
     }
 
     unittest
@@ -287,9 +273,7 @@ string extractText(T)(DOMEntity!T dom)
         "<?xml version='1.0' encoding='UTF-8'?>\n" ~
         "<n1></n1>"
         //dfmt on
-        ).parseDOM
-        .getFirstSubnodeWithName!"n1"
-        .extractText
-        .should.throwException!CouldNotFindNodeWithContentException;
+        ).parseDOM.getFirstSubnodeWithName!"n1".extractText.should
+            .throwException!CouldNotFindNodeWithContentException;
     }
 }
