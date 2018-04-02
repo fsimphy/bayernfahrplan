@@ -4,7 +4,7 @@ import dxml.dom : DOMEntity, parseDOM;
 
 import fluent.asserts : should;
 
-import std.algorithm : filter;
+import std.algorithm.iteration : filter;
 import std.conv : to;
 import std.datetime : hours, minutes;
 import std.datetime.date : Date, DateTime, DateTimeException, TimeOfDay;
@@ -663,7 +663,7 @@ do
     auto realtimeNodes = dp.getSubnodesWithName!useRealTimeNodeName;
     if (realtimeNodes.empty)
     {
-        return minutes(0);
+        return 0.minutes;
     }
     auto useRealTimeNodes = realtimeNodes.getAllSubnodes;
     if (useRealTimeNodes.empty)
@@ -968,9 +968,7 @@ do
 bool isReachable(DOMEntity!string dp, in int reachabilityThreshold,
         in DateTime currentTime = currentDateTime)
 {
-    import std.datetime : minutes;
-
-    auto reachingDuration = minutes(reachabilityThreshold);
+    auto reachingDuration = reachabilityThreshold.minutes;
 
     auto departureDateTime = DateTime(dp.departureDate, dp.departureTime) + dp.delay;
 
