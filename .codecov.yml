@@ -1,6 +1,3 @@
-ignore:
-- "*/package.d"
-
 coverage:
   notify:
     gitter:
