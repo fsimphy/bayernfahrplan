@@ -1,4 +1,4 @@
-module fahrplanparser.xmlconstants;
+module bayernfahrplan.fahrplanparser.xmlconstants;
 
 package:
 enum efaNodeName = "efa";

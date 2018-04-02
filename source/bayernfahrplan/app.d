@@ -1,4 +1,7 @@
-import fahrplanparser;
+module bayernfahrplan.app;
+
+import bayernfahrplan.fahrplanparser : parsedFahrplan;
+import bayernfahrplan.fahrplanparser.substitution : loadSubstitutionFile;
 
 import requests : getContent;
 
