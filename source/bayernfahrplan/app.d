@@ -1,9 +1,12 @@
-import fahrplanparser;
+module bayernfahrplan.app;
+
+import bayernfahrplan.fahrplanparser.parser : parsedFahrplan;
+import bayernfahrplan.fahrplanparser.substitution : loadSubstitutionFile;
 
 import requests : getContent;
 
 import std.array : array, replace;
-import std.datetime : Clock;
+import std.datetime.systime : Clock;
 import std.file : exists, isFile;
 import std.format : format;
 import std.getopt : defaultGetoptPrinter, getopt;
