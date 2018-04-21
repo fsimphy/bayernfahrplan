@@ -6,7 +6,7 @@ import fluent.asserts : should;
 
 import std.algorithm.iteration : filter;
 import std.conv : to;
-import std.datetime : hours, minutes;
+import std.datetime : days, hours, minutes;
 import std.datetime.date : Date, DateTime, DateTimeException, TimeOfDay;
 
 import bayernfahrplan.fahrplanparser.exceptions : CouldNotFindNodeWithContentException,
@@ -651,6 +651,350 @@ do
         ).parseDOM.children.filter!(node => node.name == departureNodeName)
             .front.departureDate.should.throwException!CouldNotFindNodeWithContentException;
     }
+}
+
+alias OptionalDateTime = Nullable!(DateTime);
+alias parsedRealtime = Tuple!(Ternary, "rtState", OptionalDateTime, "rtDeparture");
+alias Missing = Ternary.unknown;
+alias Unset = Ternary.no;
+alias Available = Ternary.yes;
+import std.typecons : Tuple, tuple, Nullable, Ternary;
+parsedRealtime parseDelay(DOMEntity!string dp) 
+in
+{
+    assert (dp.name == departureNodeName);
+}
+do
+{
+    import std.string : empty;
+
+    auto realtimeNodes = dp.getSubnodesWithName!useRealTimeNodeName;
+    if (realtimeNodes.empty)
+    {
+        return parsedRealtime(Missing, OptionalDateTime());
+    }
+    auto useRealTimeNodes = realtimeNodes.getAllSubnodes;
+    if (useRealTimeNodes.empty)
+    {
+        throw new CouldNotFindNodeWithContentException(useRealTimeNodeName);
+    }
+    auto useRealTimeString = useRealTimeNodes.front.text;
+    if(useRealTimeString.empty)
+    {
+        throw new CouldNotFindNodeWithContentException(useRealTimeNodeName); 
+    }
+
+    if (useRealTimeString == "0")
+    {
+        return parsedRealtime(Unset, OptionalDateTime());
+    }
+    else if (useRealTimeString == "1")
+    {
+        TimeOfDay realTime;
+        const plannedTime = dp.departureTime;
+        // TODO: This is ugly as FSCK
+        try
+        {
+            realTime = dp.departureTime!realTimeNodeName;
+        }
+        catch(CouldNotFindNodeWithContentException) {
+            realTime = plannedTime;
+        }
+        immutable realDate = (realTime < plannedTime)
+            ? dp.departureDate
+            : dp.departureDate + days(1);
+        immutable realDateTime = DateTime(realDate, realTime);
+        return parsedRealtime(Available, OptionalDateTime(realDateTime));
+    }
+    else
+    {
+        throw new UnexpectedValueException!string(useRealTimeString, realTimeNodeName);
+    }
+}
+
+@system
+{
+    unittest
+    {
+        auto dataUnderTest =
+        (// dfmt off
+        "<?xml version='1.0' encoding='UTF-8'?>\n" ~
+        "<dp>\n" ~
+        "    <realtime>0</realtime>\n" ~
+        "</dp>"
+        // dfmt on
+        ).parseDOM.children.filter!(node => node.name == departureNodeName)
+            .front;
+        auto foo = dataUnderTest.parseDelay;
+        foo.rtState.should.equal(Unset);
+    }
+
+    unittest
+    {
+        (// dfmt off
+        "<?xml version='1.0' encoding='UTF-8'?>\n" ~
+        "<dp>\n" ~
+        "    <realtime></realtime>\n" ~
+        "</dp>"
+        // dfmt on
+        ).parseDOM.children.filter!(node => node.name == departureNodeName)
+            .front.parseDelay
+            .should.throwException!(CouldNotFindNodeWithContentException);
+    }
+
+    unittest
+    {
+        (// dfmt off
+        "<?xml version='1.0' encoding='UTF-8'?>\n" ~
+        "<dp>\n" ~
+        "    <realtime>2</realtime>\n" ~
+        "</dp>"
+        // dfmt on
+        ).parseDOM.children.filter!(node => node.name == departureNodeName)
+        .front.parseDelay
+        .should.throwException!(UnexpectedValueException!string);
+    }
+
+    unittest
+    {
+        (// dfmt off
+        "<?xml version='1.0' encoding='UTF-8'?>\n" ~
+        "<dp>\n" ~
+        "    <realtime>a</realtime>\n" ~
+        "</dp>"
+        // dfmt on
+        ).parseDOM.children.filter!(node => node.name == departureNodeName)
+        .front.parseDelay
+        .should.throwException!(UnexpectedValueException!string);
+    }
+
+    unittest
+    {
+        (// dfmt off
+        "<?xml version='1.0' encoding='UTF-8'?>\n" ~
+        "<dp>\n" ~
+        "    <realtime>1</realtime>\n" ~
+        "</dp>"
+        // dfmt on
+        ).parseDOM.children.filter!(node => node.name == departureNodeName)
+        .front.parseDelay
+        .should.throwException!(CouldNotFindNodeWithContentException);
+    }
+
+    unittest
+    {
+        (// dfmt off
+        "<?xml version='1.0' encoding='UTF-8'?>\n" ~
+        "<dp>\n" ~
+        "    <realtime>1</realtime>\n" ~
+        "    <st>\n" ~
+        "        <t></t>\n" ~
+        "    </st>\n" ~
+        "</dp>"
+        // dfmt on
+        ).parseDOM.children.filter!(node => node.name == departureNodeName)
+        .front.parseDelay
+        .should.throwException!CouldNotFindNodeWithContentException;
+    }
+
+    unittest
+    {
+        (// dfmt off
+        "<?xml version='1.0' encoding='UTF-8'?>\n" ~
+        "<dp>\n" ~
+        "    <realtime>1</realtime>\n" ~
+        "    <st>\n" ~
+        "        <rt></rt>\n" ~
+        "    </st>\n" ~
+        "</dp>"
+        // dfmt on
+        ).parseDOM.children.filter!(node => node.name == departureNodeName)
+        .front.parseDelay
+        .should.throwException!CouldNotFindNodeWithContentException;
+    }
+
+    unittest
+    {
+        (// dfmt off
+        "<?xml version='1.0' encoding='UTF-8'?>\n" ~
+        "<dp>\n" ~
+        "    <st>\n" ~
+        "        <rt></rt>\n" ~
+        "        <t></t>\n" ~
+        "    </st>\n" ~
+        "</dp>"
+        // dfmt on
+        ).parseDOM.children.filter!(node => node.name == departureNodeName).front
+        .parseDelay
+        .rtState
+        .should.equal(Missing);
+    }
+
+    unittest
+    {
+        (// dfmt off
+        "<?xml version='1.0' encoding='UTF-8'?>\n" ~
+        "<dp>\n" ~
+        "    <realtime>1</realtime>\n" ~
+        "    <st>\n" ~
+        "        <rt></rt>\n" ~
+        "        <t></t>\n" ~
+        "    </st>\n" ~
+        "</dp>"
+        // dfmt on
+        ).parseDOM.children.filter!(node => node.name == departureNodeName)
+            .front.parseDelay
+            .should.throwException!CouldNotFindNodeWithContentException;
+    }
+
+    unittest
+    {
+        (// dfmt off
+        "<?xml version='1.0' encoding='UTF-8'?>\n" ~
+        "<dp>\n" ~
+        "    <realtime>1</realtime>\n" ~
+        "    <st>\n" ~
+        "        <rt>0000</rt>\n" ~
+        "        <t></t>\n" ~
+        "    </st>\n" ~
+        "</dp>"
+        // dfmt on
+        ).parseDOM.children.filter!(node => node.name == departureNodeName)
+            .front.parseDelay
+            .should.throwException!CouldNotFindNodeWithContentException;
+    }
+
+    unittest
+    {
+        (// dfmt off
+        "<?xml version='1.0' encoding='UTF-8'?>\n" ~
+        "<dp>\n" ~
+        "    <realtime>1</realtime>\n" ~
+        "    <st>\n" ~
+        "        <rt></rt>\n" ~
+        "        <t>0000</t>\n" ~
+        "    </st>\n" ~
+        "</dp>"
+        // dfmt on
+        ).parseDOM.children.filter!(node => node.name == departureNodeName)
+            .front.parseDelay
+            .should.throwException!CouldNotFindNodeWithContentException;
+    }
+
+    // TODO: Re-write test data, providing a date.
+    // Todo: add one testcase with missing date
+
+    // unittest
+    // {
+    //     (// dfmt off
+    //     "<?xml version='1.0' encoding='UTF-8'?>\n" ~
+    //     "<dp>\n" ~
+    //     "    <realtime>1</realtime>\n" ~
+    //     "    <st>\n" ~
+    //     "        <rt>0000</rt>\n" ~
+    //     "        <t>0000</t>\n" ~
+    //     "    </st>\n" ~
+    //     "</dp>"
+    //     // dfmt on
+    //     ).parseDOM.children.filter!(node => node.name == departureNodeName)
+    //         .front.parseDelay.should.throwException!CouldNotFindNodeWithContentException;
+    // }
+
+    // unittest
+    // {
+    //     (// dfmt off
+    //     "<?xml version='1.0' encoding='UTF-8'?>\n" ~
+    //     "<dp>\n" ~
+    //     "    <realtime>1</realtime>\n" ~
+    //     "    <st>\n" ~
+    //     "        <rt>0001</rt>\n" ~
+    //     "        <t>0000</t>\n" ~
+    //     "    </st>\n" ~
+    //     "</dp>"
+    //     // dfmt on
+    //     ).parseDOM.children.filter!(node => node.name == departureNodeName)
+    //         .front.delay.should.equal(1.minutes);
+    // }
+
+    // unittest
+    // {
+    //     (// dfmt off
+    //     "<?xml version='1.0' encoding='UTF-8'?>\n" ~
+    //     "<dp>\n" ~
+    //     "    <realtime>1</realtime>\n" ~
+    //     "    <st>\n" ~
+    //     "        <rt>1753</rt>\n" ~
+    //     "        <t>1751</t>\n" ~
+    //     "    </st>\n" ~
+    //     "</dp>"
+    //     // dfmt on
+    //     ).parseDOM.children.filter!(node => node.name == departureNodeName)
+    //         .front.delay.should.equal(2.minutes);
+    // }
+
+    // unittest
+    // {
+    //     (// dfmt off
+    //     "<?xml version='1.0' encoding='UTF-8'?>\n" ~
+    //     "<dp>\n" ~
+    //     "    <realtime>1</realtime>\n" ~
+    //     "    <st>\n" ~
+    //     "        <rt>1010</rt>\n" ~
+    //     "        <t>1000</t>\n" ~
+    //     "    </st>\n" ~
+    //     "</dp>"
+    //     // dfmt on
+    //     ).parseDOM.children.filter!(node => node.name == departureNodeName)
+    //         .front.delay.should.equal(10.minutes);
+    // }
+
+    // unittest
+    // {
+    //     (// dfmt off
+    //     "<?xml version='1.0' encoding='UTF-8'?>\n" ~
+    //     "<dp>\n" ~
+    //     "    <realtime>1</realtime>\n" ~
+    //     "    <st>\n" ~
+    //     "        <rt>1301</rt>\n" ~
+    //     "        <t>1242</t>\n" ~
+    //     "    </st>\n" ~
+    //     "</dp>"
+    //     // dfmt on
+    //     ).parseDOM.children.filter!(node => node.name == departureNodeName)
+    //         .front.delay.should.equal(19.minutes);
+    // }
+
+    // unittest
+    // {
+    //     (// dfmt off
+    //     "<?xml version='1.0' encoding='UTF-8'?>\n" ~
+    //     "<dp>\n" ~
+    //     "    <realtime>1</realtime>\n" ~
+    //     "    <st>\n" ~
+    //     "        <rt>0000</rt>\n" ~
+    //     "        <t>1242</t>\n" ~
+    //     "    </st>\n" ~
+    //     "</dp>"
+    //     // dfmt on
+    //     ).parseDOM.children.filter!(node => node.name == departureNodeName)
+    //         .front.delay.should.equal(678.minutes);
+    // }
+
+    // unittest
+    // {
+    //     (// dfmt off
+    //     "<?xml version='1.0' encoding='UTF-8'?>\n" ~
+    //     "<dp>\n" ~
+    //     "    <realtime>1</realtime>\n" ~
+    //     "    <st>\n" ~
+    //     "        <rt>0000</rt>\n" ~
+    //     "        <t>2359</t>\n" ~
+    //     "    </st>\n" ~
+    //     "</dp>"
+    //     // dfmt on
+    //     ).parseDOM.children.filter!(node => node.name == departureNodeName)
+    //         .front.delay.should.equal(1.minutes);
+    // }
 }
 
 auto delay(DOMEntity!string dp)
