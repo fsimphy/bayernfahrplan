@@ -1,6 +1,6 @@
-module fahrplanparser.substitution;
+module bayernfahrplan.fahrplanparser.substitution;
 
-import fluent.asserts;
+import fluent.asserts : should;
 
 import std.file : slurp;
 import std.meta : AliasSeq;

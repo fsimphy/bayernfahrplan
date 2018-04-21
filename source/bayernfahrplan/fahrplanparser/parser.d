@@ -1,22 +1,23 @@
-module fahrplanparser.parser;
+module bayernfahrplan.fahrplanparser.parser;
 
 import dxml.dom : DOMEntity, parseDOM;
 
 import fluent.asserts : should;
 
-import std.algorithm : filter;
+import std.algorithm.iteration : filter;
 import std.conv : to;
 import std.datetime : days, hours, minutes;
 import std.datetime.date : Date, DateTime, DateTimeException, TimeOfDay;
 
-import fahrplanparser.exceptions : CouldNotFindNodeWithContentException,
+import bayernfahrplan.fahrplanparser.exceptions : CouldNotFindNodeWithContentException,
     UnexpectedValueException;
-import fahrplanparser.xmlconstants;
-import fahrplanparser.xmlutils : getSubnodesWithName, getAllSubnodes;
+import bayernfahrplan.fahrplanparser.xmlconstants;
+import bayernfahrplan.fahrplanparser.xmlutils : getSubnodesWithName,
+    getAllSubnodes;
 
-private:
+    private:
 
-const DateTime currentDateTime;
+    const DateTime currentDateTime;
 
 static this()
 {
@@ -45,7 +46,7 @@ auto parsedFahrplan(string data, int reachabilityThreshold = 0)
 
     import dxml.util : normalize;
 
-    import fahrplanparser.substitution : substitute;
+    import bayernfahrplan.fahrplanparser.substitution : substitute;
 
     return data.parseDOM.getSubnodesWithName!efaNodeName
         .getSubnodesWithName!departuresNodeName
@@ -1006,7 +1007,7 @@ do
     auto realtimeNodes = dp.getSubnodesWithName!useRealTimeNodeName;
     if (realtimeNodes.empty)
     {
-        return minutes(0);
+        return 0.minutes;
     }
     auto useRealTimeNodes = realtimeNodes.getAllSubnodes;
     if (useRealTimeNodes.empty)
@@ -1311,9 +1312,7 @@ do
 bool isReachable(DOMEntity!string dp, in int reachabilityThreshold,
         in DateTime currentTime = currentDateTime)
 {
-    import std.datetime : minutes;
-
-    auto reachingDuration = minutes(reachabilityThreshold);
+    auto reachingDuration = reachabilityThreshold.minutes;
 
     auto departureDateTime = DateTime(dp.departureDate, dp.departureTime) + dp.delay;
 
