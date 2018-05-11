@@ -6,18 +6,20 @@ import bayernfahrplan.fahrplanparser.substitution : loadSubstitutionFile;
 import requests : getContent;
 
 import std.array : array, replace;
-import std.datetime.systime : Clock;
+import std.conv : to;
+import std.datetime : DateTime;
+
 import std.file : exists, isFile;
 import std.format : format;
 import std.getopt : defaultGetoptPrinter, getopt;
-import std.json : JSONValue;
+import std.json : JSONValue, parseJSON;
 import std.stdio : File, writeln;
 
 private:
 enum ver = "v0.1.1";
 enum programName = "bayernfahrplan";
 
-enum baseURL = "http://mobile.defas-fgi.de/beg/";
+enum baseURL = "http://mobile.defas-fgi.de/beg/json/";
 enum departureMonitorRequest = "XML_DM_REQUEST";
 
 public:
@@ -65,7 +67,7 @@ void main(string[] args)
          "ptOptionActive" : "1",
          "mergeDep" : "1",
          "limit" : "20",
-         "deleteAssignedStops_dm" : "1"]);
+         "deleteAssignedStops_dm" : "1"]).to!string.parseJSON;
     // dfmt on
 
     if (substitutionFileName.exists && substitutionFileName.isFile)
@@ -73,10 +75,20 @@ void main(string[] args)
         loadSubstitutionFile(substitutionFileName);
     }
 
-    auto currentTime = Clock.currTime;
+    auto currentTime = DateTime.fromISOExtString(content["now"].str);
     JSONValue j = ["time" : "%02s:%02s".format(currentTime.hour, currentTime.minute)];
+
+    import bayernfahrplan.fahrplanparser.jsonParser;
+
+    content.parseJsonFahrplan;
+
+    // TODO: InputRange!DepartureData => JSONValue[] (suitable)
+/+
     j.object["departures"] = (cast(string) content.data)
         .parsedFahrplan(reachabilityThreshold).array.JSONValue;
+    
+
+
     auto output = j.toPrettyString.replace("\\/", "/");
     if (fileName !is null)
     {
@@ -89,4 +101,5 @@ void main(string[] args)
     {
         output.writeln;
     }
+    +/
 }
