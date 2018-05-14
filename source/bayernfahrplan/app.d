@@ -86,7 +86,7 @@ void main(string[] args)
 /+
     j.object["departures"] = (cast(string) content.data)
         .parsedFahrplan(reachabilityThreshold).array.JSONValue;
-    
+
 
 
     auto output = j.toPrettyString.replace("\\/", "/");
