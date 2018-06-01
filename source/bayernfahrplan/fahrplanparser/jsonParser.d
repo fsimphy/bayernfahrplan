@@ -34,18 +34,29 @@ InputRange!DepartureData parseJsonFahrplan(ref in JSONValue data,
     return reachableDepartures;
 }
 
-struct DepartureData
+public struct DepartureData
 {
     string line;
     string direction;
     DateTime departure;
     DateTime realtimeDeparture;
     long delay;
+
+    public JSONValue toJson() {
+        import std.json : parseJSON;
+
+        // dfmt off
+        return format!`{"line":"%1$s","direction":"%2$s","departure":"%3$s","delay":"%4$s"}`
+            (line,
+            direction,
+            departure.timeOfDay.toISOExtString,
+            delay).parseJSON;
+        //dfmt off
+    }
 }
 
 DepartureData parseDepartureEntry(JSONValue departureInfo)
 {
-
     try
     {
         // dfmt off
