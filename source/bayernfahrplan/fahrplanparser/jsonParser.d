@@ -14,7 +14,8 @@ import std.range : take;
 import std.range.interfaces : InputRange, inputRangeObject;
 import std.range.primitives : isInputRange, isForwardRange, isRandomAccessRange;
 import std.stdio : writeln;
-import bayernfahrplan.fahrplanparser.substitution : substitute;
+import bayernfahrplan.fahrplanparser.departuredata : DepartureData, parseDepartureEntry, isReachable;
+import bayernfahrplan.fahrplanparser.jsonutils : parseNow;
 
 InputRange!DepartureData parseJsonFahrplan(ref in JSONValue data,
         Duration reachabilityThreshold = 0.minutes)
@@ -34,97 +35,6 @@ InputRange!DepartureData parseJsonFahrplan(ref in JSONValue data,
     return reachableDepartures;
 }
 
-public struct DepartureData
-{
-    string line;
-    string direction;
-    DateTime departure;
-    DateTime realtimeDeparture;
-    long delay;
 
-    public JSONValue toJson() {
-        import std.json : parseJSON;
 
-        // dfmt off
-        return format!`{"line":"%1$s","direction":"%2$s","departure":"%3$02d:%4$02d","delay":"%5$s"}`
-            (line,
-            direction,
-            departure.timeOfDay.hour,
-            departure.timeOfDay.minute,
-            delay).parseJSON;
-        //dfmt off
-    }
-}
 
-DepartureData parseDepartureEntry(JSONValue departureInfo)
-{
-    try
-    {
-        // dfmt off
-        return DepartureData(departureInfo.getLine,
-                departureInfo["mode"]["destination"].str.substitute,
-                departureInfo.getDepartureTime,
-                departureInfo.getRealDepartureTime,
-                departureInfo["realtime"].integer == 1 ? departureInfo["mode"]["delay"].integer : 0);
-        // dfmt on
-    }
-    catch (JSONException ex)
-    {
-        writeln("Error with JSON entry " ~ departureInfo.to!string);
-        throw ex;
-    }
-}
-
-string getLine(ref JSONValue departureInfo)
-{
-    auto lineNumber = departureInfo["mode"]["number"];
-    switch (lineNumber.type) with (JSON_TYPE)
-    {
-    case STRING:
-        return lineNumber.str;
-    case INTEGER:
-        return lineNumber.integer.to!string;
-    default:
-        return ""; // TODO: Create UnexpectedJsonType or the like.
-    }
-}
-
-DateTime getDepartureTime(JSONValue departureInfo)
-{
-    return DateTime(
-        departureInfo["dateTime"]["date"].str.parseDefasDate,
-        TimeOfDay.fromISOExtString(departureInfo["dateTime"]["time"].str ~ ":00")
-    );
-}
-
-DateTime getRealDepartureTime(JSONValue departureInfo)
-{
-
-    if (departureInfo["realtime"].integer == 1)
-    {
-        // TODO: Extract
-        return DateTime(departureInfo["dateTime"]["rtDate"].str.parseDefasDate,
-                TimeOfDay.fromISOExtString(departureInfo["dateTime"]["rtTime"].str ~ ":00"));
-    }
-    else
-    {
-        return departureInfo.getDepartureTime;
-    }
-}
-
-Date parseDefasDate(string dateString)
-{
-    auto components = dateString.split(".").map!(to!int).array;
-    return Date(components[2], components[1], components[0]);
-}
-
-DateTime parseNow(ref in JSONValue data)
-{
-    auto isoDateTimeString = data["now"].str;
-    return DateTime.fromISOExtString(isoDateTimeString);
-}
-
-bool isReachable(ref in DepartureData realDeparture, ref in DateTime now, Duration threshold)
-{
-    return (realDeparture.realtimeDeparture - now) >= threshold;
-}

@@ -82,23 +82,12 @@ void main(string[] args)
 
     import std.json : JSONValue, toJSON;
     import std.algorithm : map, each;
-    import bayernfahrplan.fahrplanparser.jsonParser : DepartureData;
+    import bayernfahrplan.fahrplanparser.departuredata : DepartureData;
 
     auto fahrplanData = content.parseJsonFahrplan;
 
     auto departures = fahrplanData.map!(dp => dp.toJson).array.JSONValue;
     j.object["departures"] = departures;
-
-    j.writeln;
-
-    fahrplanData.map!(dp => dp.toJson()).each!writeln;
-
-
-
-    // TODO: InputRange!DepartureData => JSONValue[] (suitable)
-/+
-    j.object["departures"] = (cast(string) content.data)
-        .parsedFahrplan(reachabilityThreshold).array.JSONValue;
 
     auto output = j.toPrettyString.replace("\\/", "/");
     if (fileName !is null)
@@ -112,5 +101,4 @@ void main(string[] args)
     {
         output.writeln;
     }
-    +/
 }
