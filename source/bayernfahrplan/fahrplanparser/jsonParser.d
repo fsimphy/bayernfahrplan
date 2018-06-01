@@ -46,10 +46,11 @@ public struct DepartureData
         import std.json : parseJSON;
 
         // dfmt off
-        return format!`{"line":"%1$s","direction":"%2$s","departure":"%3$s","delay":"%4$s"}`
+        return format!`{"line":"%1$s","direction":"%2$s","departure":"%3$02d:%4$02d","delay":"%5$s"}`
             (line,
             direction,
-            departure.timeOfDay.toISOExtString,
+            departure.timeOfDay.hour,
+            departure.timeOfDay.minute,
             delay).parseJSON;
         //dfmt off
     }
