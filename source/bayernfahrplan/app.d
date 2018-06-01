@@ -78,11 +78,11 @@ void main(string[] args)
     auto currentTime = DateTime.fromISOExtString(content["now"].str);
     JSONValue j = ["time" : "%02s:%02s".format(currentTime.hour, currentTime.minute)];
 
-    import bayernfahrplan.fahrplanparser.jsonParser;
+    import bayernfahrplan.fahrplanparser.jsonparser : parseJsonFahrplan;
 
     import std.json : JSONValue, toJSON;
     import std.algorithm : map, each;
-    import bayernfahrplan.fahrplanparser.departuredata : DepartureData;
+    import bayernfahrplan.fahrplanparser.departuredata : DepartureData, toJson;
 
     auto fahrplanData = content.parseJsonFahrplan;
 
