@@ -1,4 +1,4 @@
-module bayernfahrplan.fahrplanparser.exceptions;
+module bayernfahrplan.fahrplanparser.xml.xmlexceptions;
 
 private:
 import std.conv : to;

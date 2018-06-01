@@ -1,4 +1,4 @@
-module bayernfahrplan.fahrplanparser.jsonutils;
+module bayernfahrplan.fahrplanparser.json.jsonutils;
 
 import std.json : JSONValue;
 import std.datetime : DateTime, Date, TimeOfDay;

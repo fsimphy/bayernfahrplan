@@ -1,6 +1,5 @@
 module bayernfahrplan.app;
 
-import bayernfahrplan.fahrplanparser.parser : parsedFahrplan;
 import bayernfahrplan.fahrplanparser.substitution : loadSubstitutionFile;
 
 import requests : getContent;
@@ -78,11 +77,11 @@ void main(string[] args)
     auto currentTime = DateTime.fromISOExtString(content["now"].str);
     JSONValue j = ["time" : "%02s:%02s".format(currentTime.hour, currentTime.minute)];
 
-    import bayernfahrplan.fahrplanparser.jsonparser : parseJsonFahrplan;
+    import bayernfahrplan.fahrplanparser.json.jsonparser : parseJsonFahrplan;
 
     import std.json : JSONValue, toJSON;
     import std.algorithm : map, each;
-    import bayernfahrplan.fahrplanparser.departuredata : DepartureData, toJson;
+    import bayernfahrplan.fahrplanparser.data.departuredata : DepartureData, toJson;
 
     auto fahrplanData = content.parseJsonFahrplan;
 

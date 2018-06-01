@@ -1,4 +1,4 @@
-module bayernfahrplan.fahrplanparser.xmlutils;
+module bayernfahrplan.fahrplanparser.xml.xmlutils;
 
 private:
 import dxml.dom : DOMEntity, parseDOM;
@@ -7,7 +7,7 @@ import std.algorithm.iteration : filter;
 
 import std.array : empty, front, popFront;
 
-import bayernfahrplan.fahrplanparser.exceptions : CouldNotFindNodeWithContentException;
+import bayernfahrplan.fahrplanparser.xml.xmlexceptions : CouldNotFindNodeWithContentException;
 
 import std.range.primitives : isInputRange, ElementType;
 

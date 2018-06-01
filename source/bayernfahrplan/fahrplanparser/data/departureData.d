@@ -1,10 +1,7 @@
-module bayernfahrplan.fahrplanparser.departuredata;
+module bayernfahrplan.fahrplanparser.data.departuredata;
 
 import std.datetime : DateTime, Duration;
 import std.json : JSONValue;
-
-import bayernfahrplan.fahrplanparser.jsonutils : getLine, getDepartureTime,
-    getRealDepartureTime;
 
 import fluent.asserts : should;
 
@@ -55,93 +52,6 @@ JSONValue toJson(DepartureData dp)
         //dfmt on
 
         classUnderTest.toJson.should.equal(expected);
-    }
-}
-
-DepartureData parseDepartureEntry(JSONValue departureInfo)
-{
-    import bayernfahrplan.fahrplanparser.substitution : substitute;
-    import std.json : JSONException;
-    import std.stdio : writeln;
-    import std.conv : to;
-
-    try
-    {
-        // dfmt off
-        return DepartureData(departureInfo.getLine,
-                departureInfo["mode"]["destination"].str.substitute,
-                departureInfo.getDepartureTime,
-                departureInfo.getRealDepartureTime,
-                departureInfo["realtime"].integer == 1 ? departureInfo["mode"]["delay"].integer : 0);
-        // dfmt on
-    }
-    catch (JSONException ex)
-    {
-        writeln("Error with JSON entry " ~ departureInfo.to!string);
-        throw ex;
-    }
-}
-
-@system
-{
-    unittest
-    {
-        import std.json : parseJSON;
-
-        auto classUnderTest = `{
-                "realtime": 1,
-                "mode": {
-                    "number": "1A",
-                    "destination": "Endstation",
-                    "delay": 11
-                },
-                "dateTime": {
-                    "date": "1.1.2018",
-                    "time": "00:01",
-                    "rtDate": "01.01.2018",
-                    "rtTime": "00:11"
-                }
-            }`.parseJSON.parseDepartureEntry;
-
-        classUnderTest.line.should.equal("1A");
-        // If this fails, check your replacement.txt!
-        classUnderTest.direction.should.equal("Endstation");
-        classUnderTest.departure.should.equal(DateTime(2018, 1, 1, 0, 1, 0));
-        classUnderTest.realtimeDeparture.should.equal(DateTime(2018, 1, 1, 0, 11, 0));
-        classUnderTest.delay.should.equal(11);
-    }
-
-    unittest
-    {
-        import std.json : parseJSON;
-
-        auto classUnderTest = `{
-                "realtime": 0,
-                "mode": {
-                    "number": "1A",
-                    "destination": "Endstation",
-                    "delay": 11
-                },
-                "dateTime": {
-                    "date": "1.1.2018",
-                    "time": "00:01",
-                    "rtDate": "01.01.2018",
-                    "rtTime": "00:11"
-                }
-            }`.parseJSON.parseDepartureEntry;
-
-        classUnderTest.line.should.equal("1A");
-        classUnderTest.direction.should.equal("Endstation");
-        classUnderTest.departure.should.equal(DateTime(2018, 1, 1, 0, 1, 0));
-        classUnderTest.realtimeDeparture.should.equal(DateTime(2018, 1, 1, 0, 1, 0));
-        classUnderTest.delay.should.equal(0);
-    }
-
-    unittest
-    {
-        import std.json : parseJSON, JSONException;
-
-        `{}`.parseJSON.parseDepartureEntry.should.throwException!JSONException;
     }
 }
 

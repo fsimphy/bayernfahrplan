@@ -1,4 +1,4 @@
-module bayernfahrplan.fahrplanparser.parser;
+module bayernfahrplan.fahrplanparser.xml.xmlparser;
 
 import dxml.dom : DOMEntity, parseDOM;
 
@@ -9,10 +9,10 @@ import std.conv : to;
 import std.datetime : hours, minutes;
 import std.datetime.date : Date, DateTime, DateTimeException, TimeOfDay;
 
-import bayernfahrplan.fahrplanparser.exceptions : CouldNotFindNodeWithContentException,
+import bayernfahrplan.fahrplanparser.xml.xmlexceptions : CouldNotFindNodeWithContentException,
     UnexpectedValueException;
-import bayernfahrplan.fahrplanparser.xmlconstants;
-import bayernfahrplan.fahrplanparser.xmlutils : getSubnodesWithName,
+import bayernfahrplan.fahrplanparser.xml.xmlconstants;
+import bayernfahrplan.fahrplanparser.xml.xmlutils : getSubnodesWithName,
     getAllSubnodes;
 
     private:
@@ -39,7 +39,7 @@ public:
 * data is expected to contain valid XML as returned by queries sent to http://mobile.defas-fgi.de/beg/.
 */
 
-auto parsedFahrplan(string data, int reachabilityThreshold = 0)
+auto parseXmlFahrplan(string data, int reachabilityThreshold = 0)
 {// dfmt off
     import std.algorithm.iteration : map;
     import std.format : format;
@@ -77,7 +77,7 @@ auto parsedFahrplan(string data, int reachabilityThreshold = 0)
         "    <dps></dps>\n" ~
         "</efa>"
         // dfmt on
-        ).parsedFahrplan.empty.should.equal(true);
+        ).parseXmlFahrplan.empty.should.equal(true);
 
         (// dfmt off
         "<?xml version='1.0' encoding='UTF-8'?>\n" ~
@@ -98,7 +98,7 @@ auto parsedFahrplan(string data, int reachabilityThreshold = 0)
         "    </dps>\n" ~
         "</efa>"
         //dfmt on
-        ).parsedFahrplan.should.containOnly([["direction" : "Wernerwerkstraße",
+        ).parseXmlFahrplan.should.containOnly([["direction" : "Wernerwerkstraße",
                 "line" : "6", "departure" : "12:24", "delay" : "18"]]);
     }
 
@@ -122,7 +122,7 @@ auto parsedFahrplan(string data, int reachabilityThreshold = 0)
         "    </dps>\n" ~
         "</efa>"
         // dfmt on
-        ).parsedFahrplan.should.containOnly([["direction" : "Wernerwerkstraße",
+        ).parseXmlFahrplan.should.containOnly([["direction" : "Wernerwerkstraße",
                 "line" : "6", "departure" : "12:24", "delay" : "0"]]);
     }
 
@@ -158,7 +158,7 @@ auto parsedFahrplan(string data, int reachabilityThreshold = 0)
         "    </dps>\n" ~
         "</efa>"
         // dfmt on
-        ).parsedFahrplan.should.containOnly([["direction" : "Wernerwerkstraße", "line" : "6",
+        ).parseXmlFahrplan.should.containOnly([["direction" : "Wernerwerkstraße", "line" : "6",
                 "departure" : "12:24", "delay" : "0"], ["direction" : "Burgweinting",
                 "line" : "11", "departure" : "13:53", "delay" : "3"]]);
     }
