@@ -12,8 +12,10 @@ public:
 * Loads a substitution dictonary from a file.
 */
 
+alias slurpParameters = Parameters!(slurp!(string, string));
+
 void loadSubstitutionFile(alias slurpFun = slurp)(string fileName)
-        if (is(Parameters!(slurpFun!(string, string)) == Parameters!(slurp!(string,string))))
+        if (is(Parameters!(slurpFun!(string, string)) == slurpParameters))
 {
     import std.algorithm.iteration : each;
 
@@ -26,7 +28,7 @@ void loadSubstitutionFile(alias slurpFun = slurp)(string fileName)
 {
     import std.typecons : Tuple, tuple;
 
-    static Tuple!(string, string)[] mockSlurpEmpty(Type1, Type2)(string, const(char)[])
+    static Tuple!(string, string)[] mockSlurpEmpty(Type1, Type2)(slurpParameters)
     {
         return [];
     }
@@ -40,7 +42,7 @@ void loadSubstitutionFile(alias slurpFun = slurp)(string fileName)
 {
     import std.typecons : Tuple, tuple;
 
-    static Tuple!(string, string)[] mockSlurpEmptyEntry(Type1, Type2)(string, const(char)[])
+    static Tuple!(string, string)[] mockSlurpEmptyEntry(Type1, Type2)(slurpParameters)
     {
         return [tuple("", "")];
     }
@@ -55,7 +57,7 @@ void loadSubstitutionFile(alias slurpFun = slurp)(string fileName)
 {
     import std.typecons : Tuple, tuple;
 
-    static Tuple!(string, string)[] mockSlurpSingleEntry(Type1, Type2)(string, const(char)[])
+    static Tuple!(string, string)[] mockSlurpSingleEntry(Type1, Type2)(slurpParameters)
     {
         return [tuple("foo", "bar")];
     }
@@ -70,7 +72,7 @@ void loadSubstitutionFile(alias slurpFun = slurp)(string fileName)
 {
     import std.typecons : Tuple, tuple;
 
-    static Tuple!(string, string)[] mockSlurpMultipleEntries(Type1, Type2)(string, const(char)[])
+    static Tuple!(string, string)[] mockSlurpMultipleEntries(Type1, Type2)(slurpParameters)
     {
         return [tuple("", ""), tuple("0", "1"), tuple("Text in", "wird durch diesen ersetzt")];
     }
