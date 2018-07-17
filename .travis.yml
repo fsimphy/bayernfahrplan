@@ -3,8 +3,8 @@ language: d
 
 d:
     - dmd
-    - dmd-2.081.0
-    - dmd-2.080.1
+    - dmd-2.078.3
+    - dmd-2.078.2
     - ldc-1.8.0
 os:
     - linux
@@ -14,10 +14,10 @@ env:
 
 matrix:
   include:
-  - d: dmd-2.080.1
+  - d: dmd-2.078.3
     env: BUILD_TYPE=unittest-cov
   exclude:
-  - d: dmd-2.080.1
+  - d: dmd-2.078.3
     env: BUILD_TYPE=unittest
 
 addons:

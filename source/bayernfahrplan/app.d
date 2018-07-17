@@ -71,8 +71,6 @@ void main(string[] args)
 
     if (substitutionFileName.exists && substitutionFileName.isFile)
     {
-        import std.file : slurp;
-
         loadSubstitutionFile(substitutionFileName);
     }
 

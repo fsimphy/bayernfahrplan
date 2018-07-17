@@ -13,7 +13,7 @@ public:
 */
 
 void loadSubstitutionFile(alias slurpFun = slurp)(string fileName)
-        if (is(Parameters!(slurpFun!(string, string)) == AliasSeq!(string, const char[])))
+        if (is(Parameters!(slurpFun!(string, string)) == Parameters!(slurp!(string,string))))
 {
     import std.algorithm.iteration : each;
 
@@ -26,7 +26,7 @@ void loadSubstitutionFile(alias slurpFun = slurp)(string fileName)
 {
     import std.typecons : Tuple, tuple;
 
-    static Tuple!(string, string)[] mockSlurpEmpty(Type1, Type2)(string, in char[])
+    static Tuple!(string, string)[] mockSlurpEmpty(Type1, Type2)(string, const(char)[])
     {
         return [];
     }
@@ -40,7 +40,7 @@ void loadSubstitutionFile(alias slurpFun = slurp)(string fileName)
 {
     import std.typecons : Tuple, tuple;
 
-    static Tuple!(string, string)[] mockSlurpEmptyEntry(Type1, Type2)(string, in char[])
+    static Tuple!(string, string)[] mockSlurpEmptyEntry(Type1, Type2)(string, const(char)[])
     {
         return [tuple("", "")];
     }
@@ -55,7 +55,7 @@ void loadSubstitutionFile(alias slurpFun = slurp)(string fileName)
 {
     import std.typecons : Tuple, tuple;
 
-    static Tuple!(string, string)[] mockSlurpSingleEntry(Type1, Type2)(string, in char[])
+    static Tuple!(string, string)[] mockSlurpSingleEntry(Type1, Type2)(string, const(char)[])
     {
         return [tuple("foo", "bar")];
     }
@@ -70,7 +70,7 @@ void loadSubstitutionFile(alias slurpFun = slurp)(string fileName)
 {
     import std.typecons : Tuple, tuple;
 
-    static Tuple!(string, string)[] mockSlurpMultipleEntries(Type1, Type2)(string, in char[])
+    static Tuple!(string, string)[] mockSlurpMultipleEntries(Type1, Type2)(string, const(char)[])
     {
         return [tuple("", ""), tuple("0", "1"), tuple("Text in", "wird durch diesen ersetzt")];
     }
