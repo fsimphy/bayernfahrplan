@@ -14,8 +14,11 @@ import std.range : take;
 import std.range.interfaces : InputRange, inputRangeObject;
 import std.range.primitives : isInputRange, isForwardRange, isRandomAccessRange;
 import std.stdio : writeln;
+
+//dfmt off
 import bayernfahrplan.fahrplanparser.data.departuredata : DepartureData, isReachable;
-import bayernfahrplan.fahrplanparser.json : parseNow;
+//dfmt on
+import bayernfahrplan.fahrplanparser.json.jsonutils : parseNow, getIfKeyExists;
 import fluent.asserts : should;
 
 InputRange!DepartureData parseJsonFahrplan(ref in JSONValue data,
@@ -23,9 +26,9 @@ InputRange!DepartureData parseJsonFahrplan(ref in JSONValue data,
 {
 
     const currentDateTime = data.parseNow();
-
     // dfmt off
-    auto reachableDepartures = data["departures"].array
+    auto reachableDepartures = data.getIfKeyExists("departures")
+        .array
         .map!parseJsonDepartureEntry
         .array
         .sort!((a, b) => a.realtimeDeparture < b.realtimeDeparture)
@@ -38,6 +41,14 @@ InputRange!DepartureData parseJsonFahrplan(ref in JSONValue data,
 
 @system
 {
+    unittest
+    {
+        import bayernfahrplan.fahrplanparser.data.exceptions : NoSuchKeyException;
+
+        const objectUnderTest = `{"foo": "bar"}`.parseJSON;
+        objectUnderTest.parseJsonFahrplan.should.throwException!NoSuchKeyException;
+    }
+
     unittest
     {
         import std.algorithm.searching : count;
@@ -148,11 +159,11 @@ InputRange!DepartureData parseJsonFahrplan(ref in JSONValue data,
     }
 }
 
-
 DepartureData parseJsonDepartureEntry(JSONValue departureInfo)
 {
     import bayernfahrplan.fahrplanparser.substitution : substitute;
-    import bayernfahrplan.fahrplanparser.json.jsonutils : getLine, getDepartureTime, getRealDepartureTime;
+    import bayernfahrplan.fahrplanparser.json.jsonutils : getLine,
+        getDepartureTime, getRealDepartureTime;
     import std.json : JSONException;
     import std.stdio : writeln;
     import std.conv : to;
@@ -161,10 +172,12 @@ DepartureData parseJsonDepartureEntry(JSONValue departureInfo)
     {
         // dfmt off
         return DepartureData(departureInfo.getLine,
-                departureInfo["mode"]["destination"].str.substitute,
+                departureInfo.getIfKeyExists("mode").getIfKeyExists("destination").str.substitute,
                 departureInfo.getDepartureTime,
                 departureInfo.getRealDepartureTime,
-                departureInfo["realtime"].integer == 1 ? departureInfo["mode"]["delay"].integer : 0);
+                departureInfo.getIfKeyExists("realtime").integer == 1
+                    ? departureInfo.getIfKeyExists("mode").getIfKeyExists("delay").integer
+                    : 0);
         // dfmt on
     }
     catch (JSONException ex)
@@ -232,7 +245,8 @@ DepartureData parseJsonDepartureEntry(JSONValue departureInfo)
     unittest
     {
         import std.json : parseJSON, JSONException;
+        import bayernfahrplan.fahrplanparser.data : NoSuchKeyException;
 
-        `{}`.parseJSON.parseJsonDepartureEntry.should.throwException!JSONException;
+        `{}`.parseJSON.parseJsonDepartureEntry.should.throwException!NoSuchKeyException;
     }
 }

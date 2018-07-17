@@ -71,6 +71,8 @@ void main(string[] args)
 
     if (substitutionFileName.exists && substitutionFileName.isFile)
     {
+        import std.file : slurp;
+
         loadSubstitutionFile(substitutionFileName);
     }
 
@@ -81,7 +83,8 @@ void main(string[] args)
 
     import std.json : JSONValue, toJSON;
     import std.algorithm : map, each;
-    import bayernfahrplan.fahrplanparser.data.departuredata : DepartureData, toJson;
+    import bayernfahrplan.fahrplanparser.data.departuredata : DepartureData,
+        toJson;
 
     auto fahrplanData = content.parseJsonFahrplan;
 
