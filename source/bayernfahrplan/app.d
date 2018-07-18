@@ -72,10 +72,6 @@ void main(string[] args)
          "deleteAssignedStops_dm" : "1"]).to!string.parseJSON;
     // dfmt on
 
-    debug {
-        writeln(content);
-    }
-
     if (substitutionFileName.exists && substitutionFileName.isFile)
     {
         loadSubstitutionFile(substitutionFileName);

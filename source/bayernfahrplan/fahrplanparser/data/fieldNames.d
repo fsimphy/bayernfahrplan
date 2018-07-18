@@ -2,12 +2,12 @@ module bayernfahrplan.fahrplanparser.data.fieldnames;
 
 enum Fields : string {
     departures = "departures",
-    mode = "mode",
+    lineInformation = "mode",
     destination = "destination",
     realtime = "realtime",
     delay = "delay",
     lineNumber = "number",
-    dateTimes = "dateTime",
+    dateTimes = "stamp",
     date = "date",
     time = "time",
     realtimeDate = "rtDate",

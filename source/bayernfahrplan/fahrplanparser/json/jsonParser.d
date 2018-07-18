@@ -25,7 +25,6 @@ import fluent.asserts : should;
 InputRange!DepartureData parseJsonFahrplan(ref in JSONValue data,
         const Duration reachabilityThreshold = 0.minutes)
 {
-
     const currentDateTime = data.parseNow();
     // dfmt off
     return data.getIfKeyExists(Fields.departures)
@@ -45,32 +44,33 @@ InputRange!DepartureData parseJsonFahrplan(ref in JSONValue data,
         import bayernfahrplan.fahrplanparser.data.exceptions : NoSuchKeyException;
 
         const jsonData = `{"foo": "bar"}`.parseJSON;
-        jsonData.parseJsonFahrplan.should.throwException!NoSuchKeyException;
+        jsonData.parseJsonFahrplan.should.throwException!NoSuchKeyException.msg.should.contain(
+                Fields.currentDateTime);
     }
 
     unittest
     {
         import std.algorithm.searching : count;
 
-        const jsonData = `{
-            "departures": [
-                {
-                    "realtime": 1,
-                    "mode": {
-                        "number": "1A",
-                        "destination": "Endstation",
-                        "delay": 11
-                    },
-                    "dateTime": {
-                        "date": "1.1.2018",
-                        "time": "00:01",
-                        "rtDate": "01.01.2018",
-                        "rtTime": "00:11"
-                    }
-                }
-            ],
-            "now": "2018-01-01T00:00:00"
-        }`.parseJSON;
+        auto jsonData = JSONValue();
+        jsonData[Fields.departures] = JSONValue([[Fields.realtime : 1]]);
+
+        jsonData[Fields.departures][0][Fields.realtime] = 1;
+
+        jsonData[Fields.departures][0][Fields.lineInformation] = JSONValue();
+
+        jsonData[Fields.departures][0][Fields.lineInformation][Fields.lineNumber] = "1A";
+        jsonData[Fields.departures][0][Fields.lineInformation][Fields.destination] = "Endstation";
+        jsonData[Fields.departures][0][Fields.lineInformation][Fields.delay] = 11;
+
+        jsonData[Fields.departures][0][Fields.dateTimes] = JSONValue();
+        jsonData[Fields.departures][0][Fields.dateTimes][Fields.date] = 2018_01_01;
+        jsonData[Fields.departures][0][Fields.dateTimes][Fields.time] = 1;
+        jsonData[Fields.departures][0][Fields.dateTimes][Fields.realtimeDate] = 2018_01_01;
+        jsonData[Fields.departures][0][Fields.dateTimes][Fields.realtimeTime] = 11;
+
+        jsonData[Fields.currentDateTime] = "2018-01-01T00:00:00";
+
         jsonData.parseJsonFahrplan().count.should.equal(1);
     }
 
@@ -78,25 +78,25 @@ InputRange!DepartureData parseJsonFahrplan(ref in JSONValue data,
     {
         import std.algorithm.searching : count;
 
-        const jsonData = `{
-            "departures": [
-                {
-                    "realtime": 1,
-                    "mode": {
-                        "number": "1A",
-                        "destination": "Endstation",
-                        "delay": 11
-                    },
-                    "dateTime": {
-                        "date": "1.1.2018",
-                        "time": "00:01",
-                        "rtDate": "01.01.2018",
-                        "rtTime": "00:11"
-                    }
-                }
-            ],
-            "now": "2018-01-01T00:00:00"
-        }`.parseJSON;
+        auto jsonData = JSONValue();
+        jsonData[Fields.departures] = JSONValue([[Fields.realtime : 1]]);
+
+        jsonData[Fields.departures][0][Fields.realtime] = 1;
+
+        jsonData[Fields.departures][0][Fields.lineInformation] = JSONValue();
+
+        jsonData[Fields.departures][0][Fields.lineInformation][Fields.lineNumber] = "1A";
+        jsonData[Fields.departures][0][Fields.lineInformation][Fields.destination] = "Endstation";
+        jsonData[Fields.departures][0][Fields.lineInformation][Fields.delay] = 15;
+
+        jsonData[Fields.departures][0][Fields.dateTimes] = JSONValue();
+        jsonData[Fields.departures][0][Fields.dateTimes][Fields.date] = 2018_01_01;
+        jsonData[Fields.departures][0][Fields.dateTimes][Fields.time] = 1;
+        jsonData[Fields.departures][0][Fields.dateTimes][Fields.realtimeDate] = 2018_01_01;
+        jsonData[Fields.departures][0][Fields.dateTimes][Fields.realtimeTime] = 11;
+
+        jsonData[Fields.currentDateTime] = "2018-01-01T00:00:00";
+
         jsonData.parseJsonFahrplan(15.minutes).count.should.equal(0);
     }
 
@@ -105,54 +105,51 @@ InputRange!DepartureData parseJsonFahrplan(ref in JSONValue data,
         import std.algorithm.searching : count;
         import std.algorithm.sorting : isSorted;
 
-        const jsonData = `{
-            "departures": [
-                {
-                    "realtime": 1,
-                    "mode": {
-                        "number": "1A",
-                        "destination": "Endstation",
-                        "delay": 19
-                    },
-                    "dateTime": {
-                        "date": "1.1.2018",
-                        "time": "00:01",
-                        "rtDate": "01.01.2018",
-                        "rtTime": "00:20"
-                    }
-                },
-                {
-                    "realtime": 0,
-                    "mode": {
-                        "number": "2A",
-                        "destination": "Endstation2",
-                        "delay": 0
-                    },
-                    "dateTime": {
-                        "date": "1.1.2018",
-                        "time": "00:01"
-                    }
-                },
-                {
-                    "realtime": 1,
-                    "mode": {
-                        "number": "1A",
-                        "destination": "Endstation",
-                        "delay": 3
-                    },
-                    "dateTime": {
-                        "date": "1.1.2018",
-                        "time": "00:11",
-                        "rtDate": "01.01.2018",
-                        "rtTime": "00:13"
-                    }
-                }
-            ],
-            "now": "2018-01-01T00:00:00"
-        }`.parseJSON;
+        auto jsonData = JSONValue();
+        jsonData[Fields.departures] = JSONValue([[Fields.realtime : 1], [Fields.realtime : 0], [Fields.realtime : 1]]);
+
+        jsonData[Fields.departures][0][Fields.realtime] = 1;
+
+        jsonData[Fields.departures][0][Fields.lineInformation] = JSONValue();
+
+        jsonData[Fields.departures][0][Fields.lineInformation][Fields.lineNumber] = "1A";
+        jsonData[Fields.departures][0][Fields.lineInformation][Fields.destination] = "Endstation";
+        jsonData[Fields.departures][0][Fields.lineInformation][Fields.delay] = 19;
+
+        jsonData[Fields.departures][0][Fields.dateTimes] = JSONValue();
+        jsonData[Fields.departures][0][Fields.dateTimes][Fields.date] = 2018_01_01;
+        jsonData[Fields.departures][0][Fields.dateTimes][Fields.time] = 1;
+        jsonData[Fields.departures][0][Fields.dateTimes][Fields.realtimeDate] = 2018_01_01;
+        jsonData[Fields.departures][0][Fields.dateTimes][Fields.realtimeTime] = 20;
+
+        jsonData[Fields.departures][1][Fields.lineInformation] = JSONValue();
+
+        jsonData[Fields.departures][1][Fields.lineInformation][Fields.lineNumber] = "2A";
+        jsonData[Fields.departures][1][Fields.lineInformation][Fields.destination] = "Endstation2";
+        jsonData[Fields.departures][1][Fields.lineInformation][Fields.delay] = 0;
+
+        jsonData[Fields.departures][1][Fields.dateTimes] = JSONValue();
+        jsonData[Fields.departures][1][Fields.dateTimes][Fields.date] = 2018_01_01;
+        jsonData[Fields.departures][1][Fields.dateTimes][Fields.time] = 1;
+
+        jsonData[Fields.departures][2][Fields.lineInformation] = JSONValue();
+
+        jsonData[Fields.departures][2][Fields.lineInformation][Fields.lineNumber] = "1A";
+        jsonData[Fields.departures][2][Fields.lineInformation][Fields.destination] = "Endstation";
+        jsonData[Fields.departures][2][Fields.lineInformation][Fields.delay] = 3;
+
+        jsonData[Fields.departures][2][Fields.dateTimes] = JSONValue();
+        jsonData[Fields.departures][2][Fields.dateTimes][Fields.date] = 2018_01_01;
+        jsonData[Fields.departures][2][Fields.dateTimes][Fields.time] = 11;
+        jsonData[Fields.departures][2][Fields.dateTimes][Fields.realtimeDate] = 2018_01_01;
+        jsonData[Fields.departures][2][Fields.dateTimes][Fields.realtimeTime] = 13;
+
+        jsonData[Fields.currentDateTime] = "2018-01-01T00:00:00";
+
         auto callResult = jsonData.parseJsonFahrplan(5.minutes);
         callResult.count.should.equal(2);
-        callResult.array.isSorted!((a, b) => a.realtimeDeparture <= b.realtimeDeparture).should.equal(true);
+        callResult.array.isSorted!((a,
+                b) => a.realtimeDeparture <= b.realtimeDeparture).should.equal(true);
     }
 }
 
@@ -169,19 +166,22 @@ DepartureData parseJsonDepartureEntry(JSONValue departureInfo)
     {
         // dfmt off
         return DepartureData(departureInfo.getLine,
-                departureInfo.getIfKeyExists(Fields.mode).getIfKeyExists(Fields.destination).str.substitute,
+                departureInfo.getIfKeyExists(Fields.lineInformation).getIfKeyExists(Fields.destination).str.substitute,
                 departureInfo.getDepartureTime,
                 departureInfo.getRealDepartureTime,
                 departureInfo.getIfKeyExists(Fields.realtime).integer == 1
-                    ? departureInfo.getIfKeyExists(Fields.mode).getIfKeyExists(Fields.delay).integer
+                    ? departureInfo.getIfKeyExists(Fields.lineInformation).getIfKeyExists(Fields.delay).integer
                     : 0);
         // dfmt on
     }
     catch (JSONException ex)
     {
-        version(unittest) {
+        version (unittest)
+        {
             // Intentionally left blank.
-        } else {
+        }
+        else
+        {
             writeln("Error with JSON entry " ~ departureInfo.to!string);
         }
         throw ex;
@@ -194,20 +194,23 @@ DepartureData parseJsonDepartureEntry(JSONValue departureInfo)
     {
         import std.json : parseJSON;
 
-        auto testData = `{
-                "realtime": 1,
-                "mode": {
-                    "number": "1A",
-                    "destination": "Endstation",
-                    "delay": 11
-                },
-                "dateTime": {
-                    "date": "1.1.2018",
-                    "time": "00:01",
-                    "rtDate": "01.01.2018",
-                    "rtTime": "00:11"
-                }
-            }`.parseJSON.parseJsonDepartureEntry;
+        auto jsonData = JSONValue();
+
+        jsonData[Fields.realtime] = 1;
+
+        jsonData[Fields.lineInformation] = JSONValue();
+
+        jsonData[Fields.lineInformation][Fields.lineNumber] = "1A";
+        jsonData[Fields.lineInformation][Fields.destination] = "Endstation";
+        jsonData[Fields.lineInformation][Fields.delay] = 11;
+
+        jsonData[Fields.dateTimes] = JSONValue();
+        jsonData[Fields.dateTimes][Fields.date] = 2018_01_01;
+        jsonData[Fields.dateTimes][Fields.time] = 1;
+        jsonData[Fields.dateTimes][Fields.realtimeDate] = 2018_01_01;
+        jsonData[Fields.dateTimes][Fields.realtimeTime] = 11;
+
+        auto testData = jsonData.parseJsonDepartureEntry;
 
         testData.line.should.equal("1A");
         // If this fails, check your replacement.txt!
@@ -221,20 +224,24 @@ DepartureData parseJsonDepartureEntry(JSONValue departureInfo)
     {
         import std.json : parseJSON;
 
-        auto testData = `{
-                "realtime": 0,
-                "mode": {
-                    "number": "1A",
-                    "destination": "Endstation",
-                    "delay": 11
-                },
-                "dateTime": {
-                    "date": "1.1.2018",
-                    "time": "00:01",
-                    "rtDate": "01.01.2018",
-                    "rtTime": "00:11"
-                }
-            }`.parseJSON.parseJsonDepartureEntry;
+
+        auto jsonData = JSONValue();
+
+        jsonData[Fields.realtime] = 0;
+
+        jsonData[Fields.lineInformation] = JSONValue();
+
+        jsonData[Fields.lineInformation][Fields.lineNumber] = "1A";
+        jsonData[Fields.lineInformation][Fields.destination] = "Endstation";
+        jsonData[Fields.lineInformation][Fields.delay] = 11;
+
+        jsonData[Fields.dateTimes] = JSONValue();
+        jsonData[Fields.dateTimes][Fields.date] = 2018_01_01;
+        jsonData[Fields.dateTimes][Fields.time] = 1;
+        jsonData[Fields.dateTimes][Fields.realtimeDate] = 2018_01_01;
+        jsonData[Fields.dateTimes][Fields.realtimeTime] = 11;
+
+        auto testData = jsonData.parseJsonDepartureEntry;
 
         testData.line.should.equal("1A");
         testData.direction.should.equal("Endstation");
@@ -248,6 +255,6 @@ DepartureData parseJsonDepartureEntry(JSONValue departureInfo)
         import std.json : parseJSON, JSONException;
         import bayernfahrplan.fahrplanparser.data : NoSuchKeyException;
 
-        `{}`.parseJSON.parseJsonDepartureEntry.should.throwException!NoSuchKeyException;
+        `{}`.parseJSON.parseJsonDepartureEntry.should.throwException!NoSuchKeyException.msg.should.contain(Fields.lineInformation);
     }
 }

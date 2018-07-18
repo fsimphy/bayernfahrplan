@@ -14,7 +14,7 @@ string getLine(const ref JSONValue departureInfo)
 {
     import std.json : JSON_TYPE;
 
-    auto lineNumber = departureInfo.getIfKeyExists(Fields.mode).getIfKeyExists(Fields.lineNumber);
+    auto lineNumber = departureInfo.getIfKeyExists(Fields.lineInformation).getIfKeyExists(Fields.lineNumber);
     switch (lineNumber.type) with (JSON_TYPE)
     {
     case STRING:
@@ -33,29 +33,37 @@ string getLine(const ref JSONValue departureInfo)
 
     unittest
     {
-        auto testData = `{"mode": {"number": "1"}}`.parseJSON;
+        auto testData = JSONValue([Fields.lineInformation : [Fields.lineNumber : "1"]]);
         testData.getLine.should.equal("1");
     }
 
     unittest
     {
-        auto testData = `{"mode":{"number": 1}}`.parseJSON;
+        auto testData = JSONValue([Fields.lineInformation : [Fields.lineNumber : 1]]);
         testData.getLine.should.equal("1");
     }
 
     unittest
     {
-        auto testData = `{"mode" : {"number" : {"foo" : "bar"}}}`.parseJSON;
+        auto testData = JSONValue([Fields.lineInformation : [Fields.lineNumber : ["foo" : "bar"]]]);
         testData.getLine.should.throwException!UnexpectedDataException;
     }
 }
 
 DateTime getDepartureTime(JSONValue departureInfo)
 {
+    import std.string : rightJustify, leftJustify;
+    import std.array : array;
+
     auto dateTimeNode = departureInfo.getIfKeyExists(Fields.dateTimes);
+
+    // dfmt off
     return DateTime(
-        dateTimeNode.getIfKeyExists(Fields.date).str.parseDefasDate,
-        TimeOfDay.fromISOExtString(dateTimeNode.getIfKeyExists(Fields.time).str ~ ":00"));
+        Date.fromISOString(
+            dateTimeNode.getIfKeyExists(Fields.date).integer.to!string.rightJustify(8, '0').array),
+        TimeOfDay.fromISOString(
+            dateTimeNode.getIfKeyExists(Fields.time).integer.to!string.rightJustify(4, '0').leftJustify(6, '0').array));
+    // dfmt on
 }
 
 @system
@@ -65,7 +73,13 @@ DateTime getDepartureTime(JSONValue departureInfo)
 
     unittest
     {
-        auto testData = JSONValue(["dateTime" : ["date" : "01.01.2018", "time" : "00:01"]]);
+        auto testData = JSONValue([Fields.dateTimes : [Fields.date : 20181224, Fields.time : 1819]]);
+        testData.getDepartureTime.should.equal(DateTime(2018, 12, 24, 18, 19, 0));
+    }
+
+    unittest
+    {
+        auto testData = JSONValue([Fields.dateTimes : [Fields.date : 2018_01_01, Fields.time : 0001]]);
         testData.getDepartureTime.should.equal(DateTime(2018, 1, 1, 0, 1, 0));
     }
 
@@ -81,7 +95,7 @@ DateTime getDepartureTime(JSONValue departureInfo)
     {
         import std.json : JSONException;
 
-        auto testData = JSONValue(["dateTime" : ["time" : "00:01"]]);
+        auto testData = JSONValue([Fields.dateTimes : [Fields.time : 1]]);
         testData.getDepartureTime.should.throwException!NoSuchKeyException;
     }
 
@@ -89,7 +103,7 @@ DateTime getDepartureTime(JSONValue departureInfo)
     {
         import std.json : JSONException;
 
-        auto testData = JSONValue(["dateTime" : ["date" : "01.01.2018"]]);
+        auto testData = JSONValue([Fields.dateTimes : [Fields.date : 2018_01_01]]);
         testData.getDepartureTime.should.throwException!NoSuchKeyException;
     }
 
@@ -97,18 +111,26 @@ DateTime getDepartureTime(JSONValue departureInfo)
     {
         import std.json : JSONException;
 
-        auto testData = JSONValue(["dateTime" : ["date" : "01.01.2018", "time" : "00:01"]]);
+        auto testData = JSONValue([Fields.dateTimes : [Fields.date : 2018_01_01, Fields.time : 1]]);
         testData.getDepartureTime.should.equal(DateTime(2018, 1, 1, 0, 1, 0));
     }
 }
 
-DateTime getRealDepartureTime(ref in JSONValue departureInfo)
+DateTime getRealDepartureTime(ref const JSONValue departureInfo)
 {
     if (departureInfo.getIfKeyExists(Fields.realtime).integer == 1)
     {
+        import std.string : leftJustify, rightJustify;
+        import std.array : array;
+
         auto dateTimeNode = departureInfo.getIfKeyExists(Fields.dateTimes);
-        return DateTime(dateTimeNode.getIfKeyExists(Fields.realtimeDate).str.parseDefasDate,
-                TimeOfDay.fromISOExtString(dateTimeNode.getIfKeyExists(Fields.realtimeTime).str ~ ":00"));
+        // dfmt off
+        return DateTime(
+            Date.fromISOString(
+                dateTimeNode.getIfKeyExists(Fields.realtimeDate).integer.to!string.rightJustify(8, '0').array),
+            TimeOfDay.fromISOString(
+                dateTimeNode.getIfKeyExists(Fields.realtimeTime).integer.to!string.rightJustify(4, '0').leftJustify(6, '0').array));
+        // dfmt on
     }
     else
     {
@@ -122,84 +144,90 @@ DateTime getRealDepartureTime(ref in JSONValue departureInfo)
 
     unittest
     {
-        auto testData = `{"realtime": 1, "dateTime": {"rtDate": "1.1.2018", "rtTime": "00:01"}}`
-            .parseJSON;
-        testData.getRealDepartureTime.should.equal(DateTime(2018, 1, 1, 00, 01, 00));
+        auto testData = JSONValue();
+        testData[Fields.realtime] = 1;
+        //dfmt off
+        testData[Fields.dateTimes] = [
+            Fields.realtimeDate : 2018_12_24,
+            Fields.realtimeTime : 1819
+        ];
+        //dfmt on
+        testData.getRealDepartureTime.should.equal(DateTime(2018, 12, 24, 18, 19, 0));
+    }
+
+    unittest
+    {
+        auto testData = JSONValue();
+        testData[Fields.realtime] = 1;
+        // dfmt off
+        testData[Fields.dateTimes] = [
+            Fields.realtimeDate : 2018_01_01,
+            Fields.realtimeTime : 1
+        ];
+        // dfmt on
+        testData.getRealDepartureTime.should.equal(DateTime(2018, 1, 1, 0, 1, 0));
     }
 
     unittest
     {
         import std.json : JSONException;
 
-        auto testData = `{"realtime": 1, "dateTime": {"rtDate": "1.1.2018"}}`.parseJSON;
-        testData.getRealDepartureTime.should.throwException!NoSuchKeyException;
+        auto testData = JSONValue();
+        testData[Fields.realtime] = 1;
+        testData[Fields.dateTimes] = [Fields.realtimeDate : 2019_01_01];
+
+        // dfmt off
+        testData.getRealDepartureTime.should.throwException!NoSuchKeyException
+            .msg.should.contain(Fields.realtimeTime);
+        // dfmt on
     }
 
     unittest
     {
         import std.json : JSONException;
 
-        auto testData = `{"realtime": 1, "dateTime": {"rtTime": "00:01"}}`.parseJSON;
-        testData.getRealDepartureTime.should.throwException!NoSuchKeyException;
+        auto testData = JSONValue();
+        testData[Fields.realtime] = 1;
+        testData[Fields.dateTimes] = [Fields.realtimeTime : 1];
+
+        // dfmt off
+        testData.getRealDepartureTime.should.throwException!NoSuchKeyException
+            .msg.should.contain(Fields.realtimeDate);
+        // dfmt on
     }
 
     unittest
     {
         import std.json : JSONException;
 
-        auto testData = `{"dateTime": {"rtDate": "1.1.2018", "rtTime": "00:01"}}`.parseJSON;
-        testData.getRealDepartureTime.should.throwException!NoSuchKeyException;
+        auto testData = JSONValue();
+        // dfmt off
+        testData[Fields.dateTimes] = [
+            Fields.realtimeDate: 2018_01_01,
+            Fields.realtimeTime: 1
+        ];
+
+        testData.getRealDepartureTime.should.throwException!NoSuchKeyException
+            .msg.should.contain(Fields.realtime);
+        // dfmt on
     }
 
     unittest
     {
-        auto testData = `{"realtime": 0,
-                "dateTime": {"date": "1.1.2018", "time": "00:01", "rtDate": "1.1.2018", "rtTime": "00:05"}}`
-            .parseJSON;
+        auto testData = JSONValue();
+        testData[Fields.realtime] = 0;
+        // dfmt off
+        testData[Fields.dateTimes] = [
+            Fields.date: 2018_01_01,
+            Fields.time: 1,
+            Fields.realtimeDate: 2018_01_02,
+            Fields.realtimeTime: 5
+        ];
+        // dfmt on
         const testCallResult = testData.getRealDepartureTime;
 
         testCallResult.should.not.throwAnyException;
-        testCallResult.should.equal(DateTime(2018, 1, 1, 00, 01, 00));
-    }
-}
-
-Date parseDefasDate(string dateString)
-{
-    import std.array : array, split;
-    import std.algorithm.iteration : map;
-
-    auto components = dateString.split(".").map!(to!int).array;
-    return Date(components[2], components[1], components[0]);
-}
-
-@system
-{
-    unittest
-    {
-        auto testDateString = "01.01.2018";
-        testDateString.parseDefasDate.should.equal(Date(2018, 1, 1));
-    }
-
-    unittest
-    {
-        auto testDateString = "1.1.2018";
-        testDateString.parseDefasDate.should.equal(Date(2018, 1, 1));
-    }
-
-    unittest
-    {
-        import std.conv : ConvException;
-
-        auto testDateString = "1-1-2018";
-        testDateString.parseDefasDate.should.throwException!(ConvException);
-    }
-
-    unittest
-    {
-        import std.datetime : DateTimeException;
-
-        auto testDateString = "0.0.2018";
-        testDateString.parseDefasDate.should.throwException!DateTimeException;
+        testCallResult.should.equal(DateTime(2018, 1, 1, 0, 1, 0));
     }
 }
 
@@ -213,7 +241,7 @@ DateTime parseNow(ref in JSONValue data)
 {
     unittest
     {
-        auto testData = `{"now":"2018-01-01T12:34:56"}`.parseJSON;
+        auto testData = JSONValue([Fields.currentDateTime: "2018-01-01T12:34:56"]);
         testData.parseNow.should.equal(DateTime(2018, 1, 1, 12, 34, 56));
     }
 
