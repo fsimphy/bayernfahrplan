@@ -6,15 +6,15 @@ import std.conv : to;
 import fluent.asserts : should;
 
 // dfmt off
-import bayernfahrplan.fahrplanparser.data : NoSuchKeyException,  UnexpectedDataException;
+import bayernfahrplan.fahrplanparser.data : NoSuchKeyException,  UnexpectedDataException, Fields;
 // dfmt on
 
 public:
-string getLine(ref JSONValue departureInfo)
+string getLine(const ref JSONValue departureInfo)
 {
     import std.json : JSON_TYPE;
 
-    auto lineNumber = departureInfo.getIfKeyExists("mode").getIfKeyExists("number");
+    auto lineNumber = departureInfo.getIfKeyExists(Fields.mode).getIfKeyExists(Fields.lineNumber);
     switch (lineNumber.type) with (JSON_TYPE)
     {
     case STRING:
@@ -33,43 +33,29 @@ string getLine(ref JSONValue departureInfo)
 
     unittest
     {
-        auto classUnderTest = JSONValue(["mode" : ["number" : "1"]]);
-        classUnderTest.getLine.should.equal("1");
+        auto testData = `{"mode": {"number": "1"}}`.parseJSON;
+        testData.getLine.should.equal("1");
     }
 
     unittest
     {
-        auto classUnderTest = JSONValue(["mode" : ["number" : 1]]);
-        classUnderTest.getLine.should.equal("1");
+        auto testData = `{"mode":{"number": 1}}`.parseJSON;
+        testData.getLine.should.equal("1");
     }
 
     unittest
     {
-        auto classUnderTest = JSONValue(["mode" : ["number" : ["foo" : "bar"]]]);
-        classUnderTest.getLine.should.throwException!UnexpectedDataException;
+        auto testData = `{"mode" : {"number" : {"foo" : "bar"}}}`.parseJSON;
+        testData.getLine.should.throwException!UnexpectedDataException;
     }
 }
 
 DateTime getDepartureTime(JSONValue departureInfo)
 {
-    if ("dateTime" in departureInfo)
-    {
-        auto departureInfoNode = departureInfo["dateTime"];
-        if ("date" in departureInfoNode && "time" in departureInfoNode)
-        {
-            return DateTime(departureInfoNode["date"].str.parseDefasDate,
-                    TimeOfDay.fromISOExtString(departureInfoNode["time"].str ~ ":00"));
-        }
-        else
-        {
-            throw new NoSuchKeyException(departureInfoNode,
-                    "One of 'date' and 'time' is missing in JSON Payload.");
-        }
-    }
-    else
-    {
-        throw new NoSuchKeyException(departureInfo, "No such JSON value: 'dateTime'");
-    }
+    auto dateTimeNode = departureInfo.getIfKeyExists(Fields.dateTimes);
+    return DateTime(
+        dateTimeNode.getIfKeyExists(Fields.date).str.parseDefasDate,
+        TimeOfDay.fromISOExtString(dateTimeNode.getIfKeyExists(Fields.time).str ~ ":00"));
 }
 
 @system
@@ -79,66 +65,50 @@ DateTime getDepartureTime(JSONValue departureInfo)
 
     unittest
     {
-        auto classUnderTest = JSONValue(["dateTime" : ["date" : "01.01.2018", "time" : "00:01"]]);
-        classUnderTest.getDepartureTime.should.equal(DateTime(2018, 1, 1, 0, 1, 0));
+        auto testData = JSONValue(["dateTime" : ["date" : "01.01.2018", "time" : "00:01"]]);
+        testData.getDepartureTime.should.equal(DateTime(2018, 1, 1, 0, 1, 0));
     }
 
     unittest
     {
         import std.json : JSONException;
 
-        auto classUnderTest = JSONValue("");
-        classUnderTest.getDepartureTime.should.throwException!JSONException;
+        auto testData = JSONValue("");
+        testData.getDepartureTime.should.throwException!JSONException;
     }
 
     unittest
     {
         import std.json : JSONException;
 
-        auto classUnderTest = JSONValue(["dateTime" : ["time" : "00:01"]]);
-        classUnderTest.getDepartureTime.should.throwException!NoSuchKeyException;
+        auto testData = JSONValue(["dateTime" : ["time" : "00:01"]]);
+        testData.getDepartureTime.should.throwException!NoSuchKeyException;
     }
 
     unittest
     {
         import std.json : JSONException;
 
-        auto classUnderTest = JSONValue(["dateTime" : ["date" : "01.01.2018"]]);
-        classUnderTest.getDepartureTime.should.throwException!NoSuchKeyException;
+        auto testData = JSONValue(["dateTime" : ["date" : "01.01.2018"]]);
+        testData.getDepartureTime.should.throwException!NoSuchKeyException;
     }
 
     unittest
     {
         import std.json : JSONException;
 
-        auto classUnderTest = JSONValue(["dateTime" : ["date" : "01.01.2018", "time" : "00:01"]]);
-        classUnderTest.getDepartureTime.should.equal(DateTime(2018, 1, 1, 0, 1, 0));
+        auto testData = JSONValue(["dateTime" : ["date" : "01.01.2018", "time" : "00:01"]]);
+        testData.getDepartureTime.should.equal(DateTime(2018, 1, 1, 0, 1, 0));
     }
 }
 
 DateTime getRealDepartureTime(ref in JSONValue departureInfo)
 {
-    if ("realtime" in departureInfo && departureInfo["realtime"].integer == 1)
+    if (departureInfo.getIfKeyExists(Fields.realtime).integer == 1)
     {
-        // TODO: Extract
-        if ("dateTime" in departureInfo)
-        {
-            auto dateTimeNode = departureInfo["dateTime"];
-            if ("rtDate" in dateTimeNode && "rtTime" in dateTimeNode)
-            {
-                return DateTime(dateTimeNode["rtDate"].str.parseDefasDate,
-                        TimeOfDay.fromISOExtString(dateTimeNode["rtTime"].str ~ ":00"));
-            }
-            else
-            {
-                throw new NoSuchKeyException(departureInfo,
-                        "One of 'rtDate' or 'rtTime' is missing.");
-            }
-        }
-        else
-        {
-            throw new NoSuchKeyException(departureInfo, "'dateTime' is missing.");
-        }
+        auto dateTimeNode = departureInfo.getIfKeyExists(Fields.dateTimes);
+        return DateTime(dateTimeNode.getIfKeyExists(Fields.realtimeDate).str.parseDefasDate,
+                TimeOfDay.fromISOExtString(dateTimeNode.getIfKeyExists(Fields.realtimeTime).str ~ ":00"));
     }
     else
     {
@@ -152,42 +122,44 @@ DateTime getRealDepartureTime(ref in JSONValue departureInfo)
 
     unittest
     {
-        auto classUnderTest = `{"realtime": 1, "dateTime": {"rtDate": "1.1.2018", "rtTime": "00:01"}}`
+        auto testData = `{"realtime": 1, "dateTime": {"rtDate": "1.1.2018", "rtTime": "00:01"}}`
             .parseJSON;
-        classUnderTest.getRealDepartureTime.should.equal(DateTime(2018, 1, 1, 00, 01, 00));
+        testData.getRealDepartureTime.should.equal(DateTime(2018, 1, 1, 00, 01, 00));
     }
 
     unittest
     {
         import std.json : JSONException;
 
-        auto classUnderTest = `{"realtime": 1, "dateTime": {"rtDate": "1.1.2018"}}`.parseJSON;
-        classUnderTest.getRealDepartureTime.should.throwException!NoSuchKeyException;
+        auto testData = `{"realtime": 1, "dateTime": {"rtDate": "1.1.2018"}}`.parseJSON;
+        testData.getRealDepartureTime.should.throwException!NoSuchKeyException;
     }
 
     unittest
     {
         import std.json : JSONException;
 
-        auto classUnderTest = `{"realtime": 1, "dateTime": {"rtTime": "00:01"}}`.parseJSON;
-        classUnderTest.getRealDepartureTime.should.throwException!NoSuchKeyException;
+        auto testData = `{"realtime": 1, "dateTime": {"rtTime": "00:01"}}`.parseJSON;
+        testData.getRealDepartureTime.should.throwException!NoSuchKeyException;
     }
 
     unittest
     {
         import std.json : JSONException;
 
-        auto classUnderTest = `{"dateTime": {"rtDate": "1.1.2018", "rtTime": "00:01"}}`.parseJSON;
-        classUnderTest.getRealDepartureTime.should.throwException!NoSuchKeyException;
+        auto testData = `{"dateTime": {"rtDate": "1.1.2018", "rtTime": "00:01"}}`.parseJSON;
+        testData.getRealDepartureTime.should.throwException!NoSuchKeyException;
     }
 
     unittest
     {
-        auto classUnderTest = `{"realtime": 0,
+        auto testData = `{"realtime": 0,
                 "dateTime": {"date": "1.1.2018", "time": "00:01", "rtDate": "1.1.2018", "rtTime": "00:05"}}`
             .parseJSON;
-        classUnderTest.getRealDepartureTime.should.not.throwAnyException;
-        classUnderTest.getRealDepartureTime.should.equal(DateTime(2018, 1, 1, 00, 01, 00));
+        const testCallResult = testData.getRealDepartureTime;
+
+        testCallResult.should.not.throwAnyException;
+        testCallResult.should.equal(DateTime(2018, 1, 1, 00, 01, 00));
     }
 }
 
@@ -231,10 +203,9 @@ Date parseDefasDate(string dateString)
     }
 }
 
-// TODO: Error handling
 DateTime parseNow(ref in JSONValue data)
 {
-    auto isoDateTimeString = data.getIfKeyExists("now").str;
+    auto isoDateTimeString = data.getIfKeyExists(Fields.currentDateTime).str;
     return DateTime.fromISOExtString(isoDateTimeString);
 }
 
@@ -242,16 +213,16 @@ DateTime parseNow(ref in JSONValue data)
 {
     unittest
     {
-        auto classUnderTest = JSONValue(["now" : "2018-01-01T12:34:56"]);
-        classUnderTest.parseNow.should.equal(DateTime(2018, 1, 1, 12, 34, 56));
+        auto testData = `{"now":"2018-01-01T12:34:56"}`.parseJSON;
+        testData.parseNow.should.equal(DateTime(2018, 1, 1, 12, 34, 56));
     }
 
     unittest
     {
         import std.json : JSONException;
 
-        auto classUnderTest = JSONValue(["foo" : "bar"]);
-        classUnderTest.parseNow.should.throwException!NoSuchKeyException;
+        auto testData = `{"foo":"bar"}`.parseJSON;
+        testData.parseNow.should.throwException!NoSuchKeyException;
     }
 }
 
@@ -267,4 +238,17 @@ JSONValue getIfKeyExists(JSONValue data, string key, string file = __FILE__, siz
     }
 }
 
-// TODO Unittest!
+@system
+{
+    unittest
+    {
+        const testData = `{"key": "value"}`.parseJSON;
+        testData.getIfKeyExists("key").should.equal(`"value"`.parseJSON);
+    }
+
+    unittest
+    {
+        const testData = `{"key": "value"}`.parseJSON;
+        testData.getIfKeyExists("key2").should.throwException!NoSuchKeyException;
+    }
+}

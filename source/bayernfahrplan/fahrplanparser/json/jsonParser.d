@@ -16,27 +16,26 @@ import std.range.primitives : isInputRange, isForwardRange, isRandomAccessRange;
 import std.stdio : writeln;
 
 //dfmt off
-import bayernfahrplan.fahrplanparser.data.departuredata : DepartureData, isReachable;
+import bayernfahrplan.fahrplanparser.data.departuredata : DepartureData;
+import bayernfahrplan.fahrplanparser.data.fieldnames : Fields;
 //dfmt on
 import bayernfahrplan.fahrplanparser.json.jsonutils : parseNow, getIfKeyExists;
 import fluent.asserts : should;
 
 InputRange!DepartureData parseJsonFahrplan(ref in JSONValue data,
-        Duration reachabilityThreshold = 0.minutes)
+        const Duration reachabilityThreshold = 0.minutes)
 {
 
     const currentDateTime = data.parseNow();
     // dfmt off
-    auto reachableDepartures = data.getIfKeyExists("departures")
+    return data.getIfKeyExists(Fields.departures)
         .array
         .map!parseJsonDepartureEntry
+        .filter!(dp => dp.isReachable(currentDateTime, reachabilityThreshold))
         .array
         .sort!((a, b) => a.realtimeDeparture < b.realtimeDeparture)
-        .filter!(dp => dp.isReachable(currentDateTime, reachabilityThreshold))
         .inputRangeObject;
     // dfmt on
-
-    return reachableDepartures;
 }
 
 @system
@@ -45,15 +44,15 @@ InputRange!DepartureData parseJsonFahrplan(ref in JSONValue data,
     {
         import bayernfahrplan.fahrplanparser.data.exceptions : NoSuchKeyException;
 
-        const objectUnderTest = `{"foo": "bar"}`.parseJSON;
-        objectUnderTest.parseJsonFahrplan.should.throwException!NoSuchKeyException;
+        const jsonData = `{"foo": "bar"}`.parseJSON;
+        jsonData.parseJsonFahrplan.should.throwException!NoSuchKeyException;
     }
 
     unittest
     {
         import std.algorithm.searching : count;
 
-        const objectUnderTest = `{
+        const jsonData = `{
             "departures": [
                 {
                     "realtime": 1,
@@ -72,15 +71,14 @@ InputRange!DepartureData parseJsonFahrplan(ref in JSONValue data,
             ],
             "now": "2018-01-01T00:00:00"
         }`.parseJSON;
-        auto classUnderTest = objectUnderTest.parseJsonFahrplan();
-        classUnderTest.count.should.equal(1);
+        jsonData.parseJsonFahrplan().count.should.equal(1);
     }
 
     unittest
     {
         import std.algorithm.searching : count;
 
-        const objectUnderTest = `{
+        const jsonData = `{
             "departures": [
                 {
                     "realtime": 1,
@@ -99,8 +97,7 @@ InputRange!DepartureData parseJsonFahrplan(ref in JSONValue data,
             ],
             "now": "2018-01-01T00:00:00"
         }`.parseJSON;
-        auto classUnderTest = objectUnderTest.parseJsonFahrplan(15.minutes);
-        classUnderTest.count.should.equal(0);
+        jsonData.parseJsonFahrplan(15.minutes).count.should.equal(0);
     }
 
     unittest
@@ -108,7 +105,7 @@ InputRange!DepartureData parseJsonFahrplan(ref in JSONValue data,
         import std.algorithm.searching : count;
         import std.algorithm.sorting : isSorted;
 
-        const objectUnderTest = `{
+        const jsonData = `{
             "departures": [
                 {
                     "realtime": 1,
@@ -153,9 +150,9 @@ InputRange!DepartureData parseJsonFahrplan(ref in JSONValue data,
             ],
             "now": "2018-01-01T00:00:00"
         }`.parseJSON;
-        auto classUnderTest = objectUnderTest.parseJsonFahrplan(5.minutes);
-        classUnderTest.count.should.equal(2);
-        assert(classUnderTest.array.isSorted!((a, b) => a.realtimeDeparture <= b.realtimeDeparture));
+        auto callResult = jsonData.parseJsonFahrplan(5.minutes);
+        callResult.count.should.equal(2);
+        callResult.array.isSorted!((a, b) => a.realtimeDeparture <= b.realtimeDeparture).should.equal(true);
     }
 }
 
@@ -172,17 +169,21 @@ DepartureData parseJsonDepartureEntry(JSONValue departureInfo)
     {
         // dfmt off
         return DepartureData(departureInfo.getLine,
-                departureInfo.getIfKeyExists("mode").getIfKeyExists("destination").str.substitute,
+                departureInfo.getIfKeyExists(Fields.mode).getIfKeyExists(Fields.destination).str.substitute,
                 departureInfo.getDepartureTime,
                 departureInfo.getRealDepartureTime,
-                departureInfo.getIfKeyExists("realtime").integer == 1
-                    ? departureInfo.getIfKeyExists("mode").getIfKeyExists("delay").integer
+                departureInfo.getIfKeyExists(Fields.realtime).integer == 1
+                    ? departureInfo.getIfKeyExists(Fields.mode).getIfKeyExists(Fields.delay).integer
                     : 0);
         // dfmt on
     }
     catch (JSONException ex)
     {
-        writeln("Error with JSON entry " ~ departureInfo.to!string);
+        version(unittest) {
+            // Intentionally left blank.
+        } else {
+            writeln("Error with JSON entry " ~ departureInfo.to!string);
+        }
         throw ex;
     }
 }
@@ -193,7 +194,7 @@ DepartureData parseJsonDepartureEntry(JSONValue departureInfo)
     {
         import std.json : parseJSON;
 
-        auto classUnderTest = `{
+        auto testData = `{
                 "realtime": 1,
                 "mode": {
                     "number": "1A",
@@ -208,19 +209,19 @@ DepartureData parseJsonDepartureEntry(JSONValue departureInfo)
                 }
             }`.parseJSON.parseJsonDepartureEntry;
 
-        classUnderTest.line.should.equal("1A");
+        testData.line.should.equal("1A");
         // If this fails, check your replacement.txt!
-        classUnderTest.direction.should.equal("Endstation");
-        classUnderTest.departure.should.equal(DateTime(2018, 1, 1, 0, 1, 0));
-        classUnderTest.realtimeDeparture.should.equal(DateTime(2018, 1, 1, 0, 11, 0));
-        classUnderTest.delay.should.equal(11);
+        testData.direction.should.equal("Endstation");
+        testData.departure.should.equal(DateTime(2018, 1, 1, 0, 1, 0));
+        testData.realtimeDeparture.should.equal(DateTime(2018, 1, 1, 0, 11, 0));
+        testData.delay.should.equal(11);
     }
 
     unittest
     {
         import std.json : parseJSON;
 
-        auto classUnderTest = `{
+        auto testData = `{
                 "realtime": 0,
                 "mode": {
                     "number": "1A",
@@ -235,11 +236,11 @@ DepartureData parseJsonDepartureEntry(JSONValue departureInfo)
                 }
             }`.parseJSON.parseJsonDepartureEntry;
 
-        classUnderTest.line.should.equal("1A");
-        classUnderTest.direction.should.equal("Endstation");
-        classUnderTest.departure.should.equal(DateTime(2018, 1, 1, 0, 1, 0));
-        classUnderTest.realtimeDeparture.should.equal(DateTime(2018, 1, 1, 0, 1, 0));
-        classUnderTest.delay.should.equal(0);
+        testData.line.should.equal("1A");
+        testData.direction.should.equal("Endstation");
+        testData.departure.should.equal(DateTime(2018, 1, 1, 0, 1, 0));
+        testData.realtimeDeparture.should.equal(DateTime(2018, 1, 1, 0, 1, 0));
+        testData.delay.should.equal(0);
     }
 
     unittest

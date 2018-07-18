@@ -1,6 +1,11 @@
 module bayernfahrplan.app;
 
+import bayernfahrplan.fahrplanparser.data : DepartureData;
+import bayernfahrplan.fahrplanparser.json : parseNow, parseJsonFahrplan;
 import bayernfahrplan.fahrplanparser.substitution : loadSubstitutionFile;
+
+import std.json : JSONValue, toJSON, parseJSON;
+import std.algorithm : map, each;
 
 import requests : getContent;
 
@@ -11,7 +16,6 @@ import std.datetime : DateTime;
 import std.file : exists, isFile;
 import std.format : format;
 import std.getopt : defaultGetoptPrinter, getopt;
-import std.json : JSONValue, parseJSON;
 import std.stdio : File, writeln;
 
 private:
@@ -48,7 +52,6 @@ void main(string[] args)
 
     if (versionWanted)
     {
-        import std.stdio : writeln;
 
         writeln(programName, " ", ver);
         return;
@@ -69,20 +72,17 @@ void main(string[] args)
          "deleteAssignedStops_dm" : "1"]).to!string.parseJSON;
     // dfmt on
 
+    debug {
+        writeln(content);
+    }
+
     if (substitutionFileName.exists && substitutionFileName.isFile)
     {
         loadSubstitutionFile(substitutionFileName);
     }
 
-    auto currentTime = DateTime.fromISOExtString(content["now"].str);
+    auto currentTime = content.parseNow;
     JSONValue j = ["time" : "%02s:%02s".format(currentTime.hour, currentTime.minute)];
-
-    import bayernfahrplan.fahrplanparser.json.jsonparser : parseJsonFahrplan;
-
-    import std.json : JSONValue, toJSON;
-    import std.algorithm : map, each;
-    import bayernfahrplan.fahrplanparser.data.departuredata : DepartureData,
-        toJson;
 
     auto fahrplanData = content.parseJsonFahrplan;
 

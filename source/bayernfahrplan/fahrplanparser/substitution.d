@@ -5,6 +5,9 @@ import fluent.asserts : should;
 import std.file : slurp;
 import std.meta : AliasSeq;
 import std.traits : Parameters;
+private:
+
+alias slurpParameters = Parameters!(slurp!(string, string));
 
 public:
 
@@ -12,7 +15,6 @@ public:
 * Loads a substitution dictonary from a file.
 */
 
-alias slurpParameters = Parameters!(slurp!(string, string));
 
 void loadSubstitutionFile(alias slurpFun = slurp)(string fileName)
         if (is(Parameters!(slurpFun!(string, string)) == slurpParameters))

@@ -5,33 +5,36 @@ import std.json : JSONValue;
 
 import fluent.asserts : should;
 
-public struct DepartureData
+struct DepartureData
 {
     string line;
     string direction;
     DateTime departure;
     DateTime realtimeDeparture;
     long delay;
-}
 
-JSONValue toJson(DepartureData dp)
-{
+    JSONValue toJson() const
+    {
     import std.json : parseJSON;
     import std.format : format;
 
-    with (dp)
+    // dfmt off
+    return format!`{"line":"%1$s","direction":"%2$s","departure":"%3$02d:%4$02d","delay":"%5$s"}`
+        (line,
+        direction,
+        departure.timeOfDay.hour,
+        departure.timeOfDay.minute,
+        delay).parseJSON;
+    //dfmt on
+    }
+
+    bool isReachable(const ref DateTime now, const Duration threshold) const
     {
-        // dfmt off
-        return format!`{"line":"%1$s","direction":"%2$s","departure":"%3$02d:%4$02d","delay":"%5$s"}`
-            (line,
-            direction,
-            departure.timeOfDay.hour,
-            departure.timeOfDay.minute,
-            delay).parseJSON;
-        //dfmt on
+        return (realtimeDeparture - now) >= threshold;
     }
 }
 
+// toJson
 @system
 {
     unittest
@@ -45,21 +48,17 @@ JSONValue toJson(DepartureData dp)
             "delay": "2"
         }`.parseJSON;
         //dfmt off
-        auto classUnderTest = DepartureData("1A", "Endhalt",
+        auto testInput = DepartureData("1A", "Endhalt",
             DateTime(2018, 1, 1, 0, 1, 0),
             DateTime(2018, 1, 1, 0, 3, 0),
             2);
         //dfmt on
 
-        classUnderTest.toJson.should.equal(expected);
+        testInput.toJson.should.equal(expected);
     }
 }
 
-bool isReachable(ref in DepartureData realDeparture, ref in DateTime now, Duration threshold)
-{
-    return (realDeparture.realtimeDeparture - now) >= threshold;
-}
-
+// isReachable
 @system
 {
     unittest
@@ -74,7 +73,7 @@ bool isReachable(ref in DepartureData realDeparture, ref in DateTime now, Durati
         //dfmt on
 
         const fakeNow = DateTime(2018, 1, 1, 0, 6, 0);
-        assert(departureData.isReachable(fakeNow, 4.minutes));
+        departureData.isReachable(fakeNow, 4.minutes).should.equal(true);
     }
 
     unittest
@@ -89,7 +88,7 @@ bool isReachable(ref in DepartureData realDeparture, ref in DateTime now, Durati
         //dfmt on
 
         const fakeNow = DateTime(2018, 1, 1, 0, 6, 0);
-        assert(departureData.isReachable(fakeNow, 5.minutes));
+        departureData.isReachable(fakeNow, 5.minutes).should.equal(true);
     }
 
     unittest
@@ -104,7 +103,7 @@ bool isReachable(ref in DepartureData realDeparture, ref in DateTime now, Durati
         //dfmt on
 
         const fakeNow = DateTime(2018, 1, 1, 0, 6, 0);
-        assert(!departureData.isReachable(fakeNow, 6.minutes));
+        departureData.isReachable(fakeNow, 6.minutes).should.equal(false);
     }
 
     unittest
@@ -119,7 +118,7 @@ bool isReachable(ref in DepartureData realDeparture, ref in DateTime now, Durati
         //dfmt on
 
         const fakeNow = DateTime(2018, 1, 1, 23, 59, 0);
-        assert(departureData.isReachable(fakeNow, 1.minutes));
+        departureData.isReachable(fakeNow, 1.minutes).should.equal(true);
     }
 
     unittest
@@ -134,7 +133,7 @@ bool isReachable(ref in DepartureData realDeparture, ref in DateTime now, Durati
         //dfmt on
 
         const fakeNow = DateTime(2018, 1, 1, 23, 59, 0);
-        assert(departureData.isReachable(fakeNow, 2.minutes));
+        departureData.isReachable(fakeNow, 2.minutes).should.equal(true);
     }
 
     unittest
@@ -149,6 +148,6 @@ bool isReachable(ref in DepartureData realDeparture, ref in DateTime now, Durati
         //dfmt on
 
         const fakeNow = DateTime(2018, 1, 1, 23, 59, 0);
-        assert(!departureData.isReachable(fakeNow, 3.minutes));
+        departureData.isReachable(fakeNow, 3.minutes).should.equal(false);
     }
 }
