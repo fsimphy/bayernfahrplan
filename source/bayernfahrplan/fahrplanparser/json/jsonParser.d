@@ -148,8 +148,11 @@ InputRange!DepartureData parseJsonFahrplan(ref in JSONValue data,
 
         auto callResult = jsonData.parseJsonFahrplan(5.minutes);
         callResult.count.should.equal(2);
-        callResult.array.isSorted!((a,
-                b) => a.realtimeDeparture <= b.realtimeDeparture).should.equal(true);
+        // dfmt off
+        callResult.array
+            .isSorted!((a, b) => a.realtimeDeparture <= b.realtimeDeparture)
+            .should.equal(true);
+        // dfmt on
     }
 }
 
