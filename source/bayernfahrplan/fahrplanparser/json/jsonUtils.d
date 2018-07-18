@@ -14,7 +14,7 @@ string getLine(const ref JSONValue departureInfo)
 {
     import std.json : JSON_TYPE;
 
-    auto lineNumber = departureInfo.getIfKeyExists(Fields.lineInformation)
+    const lineNumber = departureInfo.getIfKeyExists(Fields.lineInformation)
         .getIfKeyExists(Fields.lineNumber);
     switch (lineNumber.type) with (JSON_TYPE)
     {
@@ -32,19 +32,19 @@ string getLine(const ref JSONValue departureInfo)
 {
     unittest
     {
-        auto testData = JSONValue([Fields.lineInformation : [Fields.lineNumber : "1"]]);
+        const testData = JSONValue([Fields.lineInformation : [Fields.lineNumber : "1"]]);
         testData.getLine.should.equal("1");
     }
 
     unittest
     {
-        auto testData = JSONValue([Fields.lineInformation : [Fields.lineNumber : 1]]);
+        const testData = JSONValue([Fields.lineInformation : [Fields.lineNumber : 1]]);
         testData.getLine.should.equal("1");
     }
 
     unittest
     {
-        auto testData = JSONValue([Fields.lineInformation : [Fields.lineNumber : ["foo" : "bar"]]]);
+        const testData = JSONValue([Fields.lineInformation : [Fields.lineNumber : ["foo" : "bar"]]]);
         testData.getLine.should.throwException!UnexpectedDataException;
     }
 }
@@ -56,7 +56,7 @@ DateTime getDepartureTime(Fields dateField = Fields.date,
     import std.string : rightJustify, leftJustify;
     import std.array : array;
 
-    auto dateTimeNode = departureInfo.getIfKeyExists(dateTimesField);
+    const dateTimeNode = departureInfo.getIfKeyExists(dateTimesField);
 
     // dfmt off
     return DateTime(
@@ -71,13 +71,13 @@ DateTime getDepartureTime(Fields dateField = Fields.date,
 {
     unittest
     {
-        auto testData = JSONValue([Fields.dateTimes : [Fields.date : 20181224, Fields.time : 1819]]);
+        const testData = JSONValue([Fields.dateTimes : [Fields.date : 2018_12_24, Fields.time : 1819]]);
         testData.getDepartureTime.should.equal(DateTime(2018, 12, 24, 18, 19, 0));
     }
 
     unittest
     {
-        auto testData = JSONValue([Fields.dateTimes : [Fields.date : 2018_01_01, Fields.time : 0001]]);
+        const testData = JSONValue([Fields.dateTimes : [Fields.date : 2018_01_01, Fields.time : 0001]]);
         testData.getDepartureTime.should.equal(DateTime(2018, 1, 1, 0, 1, 0));
     }
 
@@ -85,25 +85,25 @@ DateTime getDepartureTime(Fields dateField = Fields.date,
     {
         import std.json : JSONException;
 
-        auto testData = JSONValue("");
+        const testData = JSONValue("");
         testData.getDepartureTime.should.throwException!JSONException;
     }
 
     unittest
     {
-        auto testData = JSONValue([Fields.dateTimes : [Fields.time : 1]]);
+        const testData = JSONValue([Fields.dateTimes : [Fields.time : 1]]);
         testData.getDepartureTime.should.throwException!NoSuchKeyException;
     }
 
     unittest
     {
-        auto testData = JSONValue([Fields.dateTimes : [Fields.date : 2018_01_01]]);
+        const testData = JSONValue([Fields.dateTimes : [Fields.date : 2018_01_01]]);
         testData.getDepartureTime.should.throwException!NoSuchKeyException;
     }
 
     unittest
     {
-        auto testData = JSONValue([Fields.dateTimes : [Fields.date : 2018_01_01, Fields.time : 1]]);
+        const testData = JSONValue([Fields.dateTimes : [Fields.date : 2018_01_01, Fields.time : 1]]);
         testData.getDepartureTime.should.equal(DateTime(2018, 1, 1, 0, 1, 0));
     }
 }
@@ -205,9 +205,15 @@ DateTime getRealDepartureTime(ref const JSONValue departureInfo)
     }
 }
 
+/**
+ * Retrieves the server time from the passed JSON.
+ * Params:
+ *      data    =   the data to parse for the data
+ * Returns: The date and time as specifiedin the JSON
+ */
 DateTime parseNow(ref in JSONValue data)
 {
-    auto isoDateTimeString = data.getIfKeyExists(Fields.currentDateTime).str;
+    const isoDateTimeString = data.getIfKeyExists(Fields.currentDateTime).str;
     return DateTime.fromISOExtString(isoDateTimeString);
 }
 
@@ -215,13 +221,13 @@ DateTime parseNow(ref in JSONValue data)
 {
     unittest
     {
-        auto testData = JSONValue([Fields.currentDateTime : "2018-01-01T12:34:56"]);
+        const testData = JSONValue([Fields.currentDateTime : "2018-01-01T12:34:56"]);
         testData.parseNow.should.equal(DateTime(2018, 1, 1, 12, 34, 56));
     }
 
     unittest
     {
-        auto testData = `{"foo":"bar"}`.parseJSON;
+        const testData = `{"foo":"bar"}`.parseJSON;
         testData.parseNow.should.throwException!NoSuchKeyException;
     }
 }

@@ -1,6 +1,10 @@
 module bayernfahrplan.fahrplanparser.data.fieldnames;
 
-enum Fields : string {
+/**
+ * Contains mappings from easy to understand field names to the actual keys used in the JSON data.
+ */
+enum Fields : string
+{
     departures = "departures",
     lineInformation = "mode",
     destination = "destination",

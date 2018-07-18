@@ -1,6 +1,7 @@
 module bayernfahrplan.fahrplanparser.json.jsonparser;
 
-import bayernfahrplan.fahrplanparser.data : NoSuchKeyException, DepartureData, substitute;
+import bayernfahrplan.fahrplanparser.data : NoSuchKeyException, DepartureData,
+    substitute;
 import bayernfahrplan.fahrplanparser.data.fieldnames : Fields;
 import bayernfahrplan.fahrplanparser.json.jsonutils;
 import core.time : Duration, minutes;
@@ -12,6 +13,18 @@ import std.array : array;
 import std.datetime : DateTime;
 import std.json : JSONValue, parseJSON, JSONException;
 import std.range.interfaces : InputRange, inputRangeObject;
+
+/**
+ * Takes JSON retrieved from the DEFAS API and parses it into a sorted range of
+ * conncetions that can still be reached, taking into account the configured
+ * threshold time.
+ * Params:
+ *      data                    = the JSON data to parse
+ *      reachabilityThreshold   = the timespan during which to consider a connection
+ *                                to be "unreachable". Defaults to `0`.
+ * Returns: A range of all reachable departues, sorted by departure time. This takes
+ *          into account realtime data, where available.
+ */
 InputRange!DepartureData parseJsonFahrplan(ref in JSONValue data,
         const Duration reachabilityThreshold = 0.minutes)
 {
@@ -87,7 +100,8 @@ InputRange!DepartureData parseJsonFahrplan(ref in JSONValue data,
     unittest
     {
         auto jsonData = JSONValue();
-        jsonData[Fields.departures] = JSONValue([[Fields.realtime : 1], [Fields.realtime : 0], [Fields.realtime : 1]]);
+        jsonData[Fields.departures] = JSONValue([[Fields.realtime : 1],
+                [Fields.realtime : 0], [Fields.realtime : 1]]);
 
         jsonData[Fields.departures][0][Fields.realtime] = 1;
 
@@ -137,6 +151,10 @@ InputRange!DepartureData parseJsonFahrplan(ref in JSONValue data,
     }
 }
 
+/**
+ * Parses a single entry from the departure list of the DEFAS API JSON into
+ * the easier to use `DepartureData` struct.
+ */
 DepartureData parseJsonDepartureEntry(JSONValue departureInfo)
 {
     try
@@ -161,6 +179,7 @@ DepartureData parseJsonDepartureEntry(JSONValue departureInfo)
         {
             import std.stdio : writeln;
             import std.conv : to;
+
             writeln("Error with JSON entry " ~ departureInfo.to!string);
         }
         throw ex;
@@ -187,7 +206,7 @@ DepartureData parseJsonDepartureEntry(JSONValue departureInfo)
         jsonData[Fields.dateTimes][Fields.realtimeDate] = 2018_01_01;
         jsonData[Fields.dateTimes][Fields.realtimeTime] = 11;
 
-        auto testData = jsonData.parseJsonDepartureEntry;
+        const testData = jsonData.parseJsonDepartureEntry;
 
         testData.line.should.equal("1A");
         // If this fails, check your replacement.txt!
@@ -215,7 +234,7 @@ DepartureData parseJsonDepartureEntry(JSONValue departureInfo)
         jsonData[Fields.dateTimes][Fields.realtimeDate] = 2018_01_01;
         jsonData[Fields.dateTimes][Fields.realtimeTime] = 11;
 
-        auto testData = jsonData.parseJsonDepartureEntry;
+        const testData = jsonData.parseJsonDepartureEntry;
 
         testData.line.should.equal("1A");
         testData.direction.should.equal("Endstation");
@@ -226,6 +245,7 @@ DepartureData parseJsonDepartureEntry(JSONValue departureInfo)
 
     unittest
     {
-        `{}`.parseJSON.parseJsonDepartureEntry.should.throwException!NoSuchKeyException.msg.should.contain(Fields.lineInformation);
+        `{}`.parseJSON.parseJsonDepartureEntry.should.throwException!NoSuchKeyException.msg.should.contain(
+                Fields.lineInformation);
     }
 }

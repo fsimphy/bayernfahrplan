@@ -54,7 +54,7 @@ void main(string[] args)
     }
 
     // dfmt off
-    auto content = getContent(baseURL ~ departureMonitorRequest,
+    const content = getContent(baseURL ~ departureMonitorRequest,
         ["outputFormat" : "XML",
          "language" : "de",
          "stateless" : "1",
@@ -73,15 +73,15 @@ void main(string[] args)
         loadSubstitutionFile(substitutionFileName);
     }
 
-    auto currentTime = content.parseNow;
+    const currentTime = content.parseNow;
     JSONValue j = ["time" : "%02s:%02s".format(currentTime.hour, currentTime.minute)];
 
     auto fahrplanData = content.parseJsonFahrplan;
 
-    auto departures = fahrplanData.map!(dp => dp.toJson).array.JSONValue;
+    const departures = fahrplanData.map!(dp => dp.toJson).array.JSONValue;
     j.object["departures"] = departures;
 
-    auto output = j.toPrettyString.replace("\\/", "/");
+    const output = j.toPrettyString.replace("\\/", "/");
     if (fileName !is null)
     {
         auto outfile = File(fileName, "w");
