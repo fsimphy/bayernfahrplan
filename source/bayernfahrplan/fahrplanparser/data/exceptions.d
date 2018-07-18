@@ -1,14 +1,13 @@
 module bayernfahrplan.fahrplanparser.data.exceptions;
 
 import std.json : JSONValue, JSON_TYPE;
+import std.format : format;
 
 class NoSuchKeyException : Throwable
 {
     this(JSONValue payload, string key, string file = __FILE__,
             size_t line = __LINE__, Throwable nextInChain = null) @trusted
     {
-        import std.format : format;
-
         string msg = format!("No key %s in data.\nData was:\n%s")(key, payload);
         super(msg, file, line, nextInChain);
     }
@@ -19,7 +18,6 @@ class UnexpectedDataException : Throwable
     this(JSONValue payload, string key, JSON_TYPE[] expectedTypes, JSON_TYPE actualType,
             string file = __FILE__, size_t line = __LINE__, Throwable nextInChain = null) @trusted
     {
-        import std.format : format;
         import std.array : array, front, popFront, join;
         import std.algorithm.iteration : map;
         import std.conv : to;

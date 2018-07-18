@@ -1,10 +1,10 @@
-module bayernfahrplan.fahrplanparser.substitution;
+module bayernfahrplan.fahrplanparser.data.substitution;
 
 import fluent.asserts : should;
 
 import std.file : slurp;
-import std.meta : AliasSeq;
 import std.traits : Parameters;
+
 private:
 
 alias slurpParameters = Parameters!(slurp!(string, string));
@@ -14,7 +14,6 @@ public:
 /***********************************
 * Loads a substitution dictonary from a file.
 */
-
 
 void loadSubstitutionFile(alias slurpFun = slurp)(string fileName)
         if (is(Parameters!(slurpFun!(string, string)) == slurpParameters))

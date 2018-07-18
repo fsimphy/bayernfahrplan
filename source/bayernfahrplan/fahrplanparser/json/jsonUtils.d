@@ -1,12 +1,12 @@
 module bayernfahrplan.fahrplanparser.json.jsonutils;
 
-import std.json : JSONValue;
+import std.json : JSONValue, parseJSON;
 import std.datetime : DateTime, Date, TimeOfDay;
 import std.conv : to;
 import fluent.asserts : should;
 
 // dfmt off
-import bayernfahrplan.fahrplanparser.data : NoSuchKeyException,  UnexpectedDataException, Fields;
+import bayernfahrplan.fahrplanparser.data;
 // dfmt on
 
 public:
@@ -29,8 +29,6 @@ string getLine(const ref JSONValue departureInfo)
 
 @system
 {
-    import std.stdio : writeln;
-
     unittest
     {
         auto testData = JSONValue([Fields.lineInformation : [Fields.lineNumber : "1"]]);
@@ -68,9 +66,6 @@ DateTime getDepartureTime(JSONValue departureInfo)
 
 @system
 {
-    import std.stdio : writeln;
-    import std.format : format;
-
     unittest
     {
         auto testData = JSONValue([Fields.dateTimes : [Fields.date : 20181224, Fields.time : 1819]]);
@@ -93,24 +88,18 @@ DateTime getDepartureTime(JSONValue departureInfo)
 
     unittest
     {
-        import std.json : JSONException;
-
         auto testData = JSONValue([Fields.dateTimes : [Fields.time : 1]]);
         testData.getDepartureTime.should.throwException!NoSuchKeyException;
     }
 
     unittest
     {
-        import std.json : JSONException;
-
         auto testData = JSONValue([Fields.dateTimes : [Fields.date : 2018_01_01]]);
         testData.getDepartureTime.should.throwException!NoSuchKeyException;
     }
 
     unittest
     {
-        import std.json : JSONException;
-
         auto testData = JSONValue([Fields.dateTimes : [Fields.date : 2018_01_01, Fields.time : 1]]);
         testData.getDepartureTime.should.equal(DateTime(2018, 1, 1, 0, 1, 0));
     }
@@ -140,8 +129,6 @@ DateTime getRealDepartureTime(ref const JSONValue departureInfo)
 
 @system
 {
-    import std.json : parseJSON;
-
     unittest
     {
         auto testData = JSONValue();
@@ -170,8 +157,6 @@ DateTime getRealDepartureTime(ref const JSONValue departureInfo)
 
     unittest
     {
-        import std.json : JSONException;
-
         auto testData = JSONValue();
         testData[Fields.realtime] = 1;
         testData[Fields.dateTimes] = [Fields.realtimeDate : 2019_01_01];
@@ -184,8 +169,6 @@ DateTime getRealDepartureTime(ref const JSONValue departureInfo)
 
     unittest
     {
-        import std.json : JSONException;
-
         auto testData = JSONValue();
         testData[Fields.realtime] = 1;
         testData[Fields.dateTimes] = [Fields.realtimeTime : 1];
@@ -198,8 +181,6 @@ DateTime getRealDepartureTime(ref const JSONValue departureInfo)
 
     unittest
     {
-        import std.json : JSONException;
-
         auto testData = JSONValue();
         // dfmt off
         testData[Fields.dateTimes] = [
@@ -247,8 +228,6 @@ DateTime parseNow(ref in JSONValue data)
 
     unittest
     {
-        import std.json : JSONException;
-
         auto testData = `{"foo":"bar"}`.parseJSON;
         testData.parseNow.should.throwException!NoSuchKeyException;
     }
