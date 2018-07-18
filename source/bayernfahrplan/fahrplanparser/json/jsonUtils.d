@@ -14,7 +14,8 @@ string getLine(const ref JSONValue departureInfo)
 {
     import std.json : JSON_TYPE;
 
-    auto lineNumber = departureInfo.getIfKeyExists(Fields.lineInformation).getIfKeyExists(Fields.lineNumber);
+    auto lineNumber = departureInfo.getIfKeyExists(Fields.lineInformation)
+        .getIfKeyExists(Fields.lineNumber);
     switch (lineNumber.type) with (JSON_TYPE)
     {
     case STRING:
@@ -48,19 +49,21 @@ string getLine(const ref JSONValue departureInfo)
     }
 }
 
-DateTime getDepartureTime(JSONValue departureInfo)
+DateTime getDepartureTime(Fields dateField = Fields.date,
+        Fields timeField = Fields.time, Fields dateTimesField = Fields.dateTimes)(
+        JSONValue departureInfo)
 {
     import std.string : rightJustify, leftJustify;
     import std.array : array;
 
-    auto dateTimeNode = departureInfo.getIfKeyExists(Fields.dateTimes);
+    auto dateTimeNode = departureInfo.getIfKeyExists(dateTimesField);
 
     // dfmt off
     return DateTime(
         Date.fromISOString(
-            dateTimeNode.getIfKeyExists(Fields.date).integer.to!string.rightJustify(8, '0').array),
+            dateTimeNode.getIfKeyExists(dateField).integer.to!string.rightJustify(8, '0').array),
         TimeOfDay.fromISOString(
-            dateTimeNode.getIfKeyExists(Fields.time).integer.to!string.rightJustify(4, '0').leftJustify(6, '0').array));
+            dateTimeNode.getIfKeyExists(timeField).integer.to!string.rightJustify(4, '0').leftJustify(6, '0').array));
     // dfmt on
 }
 
@@ -109,17 +112,7 @@ DateTime getRealDepartureTime(ref const JSONValue departureInfo)
 {
     if (departureInfo.getIfKeyExists(Fields.realtime).integer == 1)
     {
-        import std.string : leftJustify, rightJustify;
-        import std.array : array;
-
-        auto dateTimeNode = departureInfo.getIfKeyExists(Fields.dateTimes);
-        // dfmt off
-        return DateTime(
-            Date.fromISOString(
-                dateTimeNode.getIfKeyExists(Fields.realtimeDate).integer.to!string.rightJustify(8, '0').array),
-            TimeOfDay.fromISOString(
-                dateTimeNode.getIfKeyExists(Fields.realtimeTime).integer.to!string.rightJustify(4, '0').leftJustify(6, '0').array));
-        // dfmt on
+        return departureInfo.getDepartureTime!(Fields.realtimeDate, Fields.realtimeTime);
     }
     else
     {
@@ -222,7 +215,7 @@ DateTime parseNow(ref in JSONValue data)
 {
     unittest
     {
-        auto testData = JSONValue([Fields.currentDateTime: "2018-01-01T12:34:56"]);
+        auto testData = JSONValue([Fields.currentDateTime : "2018-01-01T12:34:56"]);
         testData.parseNow.should.equal(DateTime(2018, 1, 1, 12, 34, 56));
     }
 
