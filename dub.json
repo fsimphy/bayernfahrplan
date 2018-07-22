@@ -6,8 +6,7 @@
 	],
 	"dependencies": {
 		"requests": "0.7.2",
-		"fluent-asserts": "~>0.9.0",
-		"dxml": "~>0.2.3"
+		"fluent-asserts": "~>0.9.0"
 	},
 	"description": "A minimal D application.",
 	"copyright": "Copyright © 2018, Johannes Loher",
