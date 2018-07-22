@@ -5,9 +5,7 @@ import std.datetime : DateTime, Date, TimeOfDay;
 import std.conv : to;
 import fluent.asserts : should;
 
-// dfmt off
 import bayernfahrplan.fahrplanparser.data;
-// dfmt on
 
 public:
 string getLine(const ref JSONValue departureInfo)
