@@ -19,7 +19,7 @@ string getLine(const ref JSONValue departureInfo)
     case STRING:
         return lineNumber.str;
     case INTEGER:
-        return lineNumber.integer.to!string;
+        return lineNumber.integer.to!(typeof(""));
     default:
         throw new UnexpectedDataException(departureInfo, "mode.number",
                 [JSON_TYPE.INTEGER, JSON_TYPE.STRING], lineNumber.type);
