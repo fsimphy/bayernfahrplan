@@ -12,14 +12,14 @@ string getLine(const ref JSONValue departureInfo)
 {
     import std.json : JSON_TYPE;
 
-    const lineNumber = departureInfo.getIfKeyExists(Fields.lineInformation)
+    const JSONValue lineNumber = departureInfo.getIfKeyExists(Fields.lineInformation)
         .getIfKeyExists(Fields.lineNumber);
-    switch (lineNumber.type) with (JSON_TYPE)
+    switch (lineNumber.type)
     {
-    case STRING:
+    case JSON_TYPE.STRING:
         return lineNumber.str;
-    case INTEGER:
-        return lineNumber.integer.to!(typeof(""));
+    case JSON_TYPE.INTEGER:
+        return lineNumber.integer.to!string;
     default:
         throw new UnexpectedDataException(departureInfo, "mode.number",
                 [JSON_TYPE.INTEGER, JSON_TYPE.STRING], lineNumber.type);
