@@ -12,7 +12,7 @@ string getLine(const ref JSONValue departureInfo)
 {
     import std.json : JSON_TYPE;
 
-    const JSONValue lineNumber = departureInfo.getIfKeyExists(Fields.lineInformation)
+    const lineNumber = departureInfo.getIfKeyExists(Fields.lineInformation)
         .getIfKeyExists(Fields.lineNumber);
     switch (lineNumber.type)
     {

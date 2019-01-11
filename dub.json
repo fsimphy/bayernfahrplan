@@ -6,11 +6,7 @@
 	],
 	"dependencies": {
 		"requests": "~>1.0.5",
-		"fluent-asserts": "~>0.12.3",
-		"vibe-d:tls": "~>0.8.4"
-	},
-	"subConfigurations": {
-		"vibe-d:tls": "openssl-1.1"
+		"fluent-asserts": "~>0.12.3"
 	},
 	"description": "A minimal D application.",
 	"copyright": "Copyright © 2018-2019, Johannes Loher",
