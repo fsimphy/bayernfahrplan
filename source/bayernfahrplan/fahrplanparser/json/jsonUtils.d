@@ -14,11 +14,11 @@ string getLine(const ref JSONValue departureInfo)
 
     const lineNumber = departureInfo.getIfKeyExists(Fields.lineInformation)
         .getIfKeyExists(Fields.lineNumber);
-    switch (lineNumber.type) with (JSON_TYPE)
+    switch (lineNumber.type)
     {
-    case STRING:
+    case JSON_TYPE.STRING:
         return lineNumber.str;
-    case INTEGER:
+    case JSON_TYPE.INTEGER:
         return lineNumber.integer.to!string;
     default:
         throw new UnexpectedDataException(departureInfo, "mode.number",
