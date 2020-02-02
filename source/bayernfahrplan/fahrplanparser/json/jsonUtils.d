@@ -10,19 +10,19 @@ import bayernfahrplan.fahrplanparser.data;
 public:
 string getLine(const ref JSONValue departureInfo)
 {
-    import std.json : JSON_TYPE;
+    import std.json : JSONType;
 
     const lineNumber = departureInfo.getIfKeyExists(Fields.lineInformation)
         .getIfKeyExists(Fields.lineNumber);
     switch (lineNumber.type)
     {
-    case JSON_TYPE.STRING:
+    case JSONType.STRING:
         return lineNumber.str;
-    case JSON_TYPE.INTEGER:
+    case JSONType.INTEGER:
         return lineNumber.integer.to!string;
     default:
         throw new UnexpectedDataException(departureInfo, "mode.number",
-                [JSON_TYPE.INTEGER, JSON_TYPE.STRING], lineNumber.type);
+                [JSONType.INTEGER, JSONType.STRING], lineNumber.type);
     }
 }
 
@@ -30,19 +30,25 @@ string getLine(const ref JSONValue departureInfo)
 {
     unittest
     {
-        const testData = JSONValue([Fields.lineInformation : [Fields.lineNumber : "1"]]);
+        const testData = JSONValue([
+                Fields.lineInformation: [Fields.lineNumber: "1"]
+                ]);
         testData.getLine.should.equal("1");
     }
 
     unittest
     {
-        const testData = JSONValue([Fields.lineInformation : [Fields.lineNumber : 1]]);
+        const testData = JSONValue([
+                Fields.lineInformation: [Fields.lineNumber: 1]
+                ]);
         testData.getLine.should.equal("1");
     }
 
     unittest
     {
-        const testData = JSONValue([Fields.lineInformation : [Fields.lineNumber : ["foo" : "bar"]]]);
+        const testData = JSONValue([
+                Fields.lineInformation: [Fields.lineNumber: ["foo": "bar"]]
+                ]);
         testData.getLine.should.throwException!UnexpectedDataException;
     }
 }
@@ -69,13 +75,17 @@ DateTime getDepartureTime(Fields dateField = Fields.date,
 {
     unittest
     {
-        const testData = JSONValue([Fields.dateTimes : [Fields.date : 2018_12_24, Fields.time : 1819]]);
+        const testData = JSONValue([
+                Fields.dateTimes: [Fields.date: 2018_12_24, Fields.time: 1819]
+                ]);
         testData.getDepartureTime.should.equal(DateTime(2018, 12, 24, 18, 19, 0));
     }
 
     unittest
     {
-        const testData = JSONValue([Fields.dateTimes : [Fields.date : 2018_01_01, Fields.time : 0001]]);
+        const testData = JSONValue([
+                Fields.dateTimes: [Fields.date: 2018_01_01, Fields.time: 0001]
+                ]);
         testData.getDepartureTime.should.equal(DateTime(2018, 1, 1, 0, 1, 0));
     }
 
@@ -89,19 +99,21 @@ DateTime getDepartureTime(Fields dateField = Fields.date,
 
     unittest
     {
-        const testData = JSONValue([Fields.dateTimes : [Fields.time : 1]]);
+        const testData = JSONValue([Fields.dateTimes: [Fields.time: 1]]);
         testData.getDepartureTime.should.throwException!NoSuchKeyException;
     }
 
     unittest
     {
-        const testData = JSONValue([Fields.dateTimes : [Fields.date : 2018_01_01]]);
+        const testData = JSONValue([Fields.dateTimes: [Fields.date: 2018_01_01]]);
         testData.getDepartureTime.should.throwException!NoSuchKeyException;
     }
 
     unittest
     {
-        const testData = JSONValue([Fields.dateTimes : [Fields.date : 2018_01_01, Fields.time : 1]]);
+        const testData = JSONValue([
+                Fields.dateTimes: [Fields.date: 2018_01_01, Fields.time: 1]
+                ]);
         testData.getDepartureTime.should.equal(DateTime(2018, 1, 1, 0, 1, 0));
     }
 }
@@ -150,7 +162,7 @@ DateTime getRealDepartureTime(ref const JSONValue departureInfo)
     {
         auto testData = JSONValue();
         testData[Fields.realtime] = 1;
-        testData[Fields.dateTimes] = [Fields.realtimeDate : 2019_01_01];
+        testData[Fields.dateTimes] = [Fields.realtimeDate: 2019_01_01];
 
         // dfmt off
         testData.getRealDepartureTime.should.throwException!NoSuchKeyException
@@ -162,7 +174,7 @@ DateTime getRealDepartureTime(ref const JSONValue departureInfo)
     {
         auto testData = JSONValue();
         testData[Fields.realtime] = 1;
-        testData[Fields.dateTimes] = [Fields.realtimeTime : 1];
+        testData[Fields.dateTimes] = [Fields.realtimeTime: 1];
 
         // dfmt off
         testData.getRealDepartureTime.should.throwException!NoSuchKeyException
@@ -219,7 +231,9 @@ DateTime parseNow(ref in JSONValue data)
 {
     unittest
     {
-        const testData = JSONValue([Fields.currentDateTime : "2018-01-01T12:34:56"]);
+        const testData = JSONValue([
+                Fields.currentDateTime: "2018-01-01T12:34:56"
+                ]);
         testData.parseNow.should.equal(DateTime(2018, 1, 1, 12, 34, 56));
     }
 
