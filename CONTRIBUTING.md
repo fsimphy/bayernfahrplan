@@ -6,7 +6,7 @@ The following is a set of guidelines for contributing to bayernfahrplan. These a
 ## Important resources
 - Documentation: [README.md](README.md) (we don’t have anything else at the moment)
 - Issue tracker: [Issues](https://github.com/fsimphy/bayernfahrplan/issues)
-- Communication: [![Join Chat](https://img.shields.io/badge/%5Bmatrix%5D-Join%20chat-blue)](https://matrix.to/#/#fsi-code:im.f3l.de)
+- Communication: [![Join the chat at https://matrix.to/#/#fsi-code:im.f3l.de](https://img.shields.io/badge/%5Bmatrix%5D-Join%20chat-blue)](https://matrix.to/#/#fsi-code:im.f3l.de)
 ## Building, running and testing
 To find out about how to build, run and test the project, read the corresponding sections in [README.md](README.md).
 
@@ -131,28 +131,28 @@ Each symbol should only be imported once, and with a scope as small as possible 
 We use issue labels to categorize issues into groups. This makes finding issues belonging to a particular group very easy. 
 Our tagging system is loosly based on Zach Dunn’s [Styleguide for issue tagging](https://robinpowered.com/blog/best-practice-system-for-organizing-and-tagging-github-issues/). Here is a list of all labels we currently use:
 
-| Label name | Description |
-| --- | --- |
-| `bug` | Bugs. |
-| `security` | Security related issues. |
-| `production` | Issues concerning the version currently in production. |
-| `chore` | Chores that do not require any changes to the code. |
-| `design` | Design related issues. |
-| `ux` | Issues related to the user experience. |
-| `test` | Test related issues. |
-| `discussion` | More a discussion than an actual issue. |
-| `question` | More a question than an actual issue. |
-| `enhancement` | Enhancements to existing features. |
-| `optimization` | Optimization (e.g. performance). |
-| `feature` | New features. |
-| `in progress` | Issues that are currently in progress. |
-| `watchlist` | Issues that we would like to proceed with, but need some action first (e.g. more clarification). |
-| `invalid` | Invalid issues. |
-| `wontfix` | Issues we have decided to not fix (for whatever reason). |
-| `duplicate` | Issues that are duplicates of other issues. |
-| `on hold` | Issues that we decided to not deal with right now, but might come back to later. |
-| `beginner` | Issues that are a great start for new beginning contributers. |
-| `help wanted` | Issues we would like new contributers to help us with. |
+| Label name     | Description                                                                                      |
+| -------------- | ------------------------------------------------------------------------------------------------ |
+| `bug`          | Bugs.                                                                                            |
+| `security`     | Security related issues.                                                                         |
+| `production`   | Issues concerning the version currently in production.                                           |
+| `chore`        | Chores that do not require any changes to the code.                                              |
+| `design`       | Design related issues.                                                                           |
+| `ux`           | Issues related to the user experience.                                                           |
+| `test`         | Test related issues.                                                                             |
+| `discussion`   | More a discussion than an actual issue.                                                          |
+| `question`     | More a question than an actual issue.                                                            |
+| `enhancement`  | Enhancements to existing features.                                                               |
+| `optimization` | Optimization (e.g. performance).                                                                 |
+| `feature`      | New features.                                                                                    |
+| `in progress`  | Issues that are currently in progress.                                                           |
+| `watchlist`    | Issues that we would like to proceed with, but need some action first (e.g. more clarification). |
+| `invalid`      | Invalid issues.                                                                                  |
+| `wontfix`      | Issues we have decided to not fix (for whatever reason).                                         |
+| `duplicate`    | Issues that are duplicates of other issues.                                                      |
+| `on hold`      | Issues that we decided to not deal with right now, but might come back to later.                 |
+| `beginner`     | Issues that are a great start for new beginning contributers.                                    |
+| `help wanted`  | Issues we would like new contributers to help us with.                                           |
 
 ### Project board
 

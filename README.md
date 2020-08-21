@@ -2,7 +2,7 @@
 
 [![Build status](https://github.com/fsimphy/bayernfahrplan/workflows/bayernfahrplan%20workflow/badge.svg)](https://github.com/fsimphy/bayernfahrplan/actions)
 [![codecov](https://codecov.io/gh/fsimphy/bayernfahrplan/branch/develop/graph/badge.svg)](https://codecov.io/gh/fsimphy/bayernfahrplan)
-[![Join Chat](https://img.shields.io/badge/%5Bmatrix%5D-Join%20chat-blue)](https://matrix.to/#/#fsi-code:im.f3l.de)
+[![Join the chat at https://matrix.to/#/#fsi-code:im.f3l.de](https://img.shields.io/badge/%5Bmatrix%5D-Join%20chat-blue)](https://matrix.to/#/#fsi-code:im.f3l.de)
 
 A JSON-fetcher for bus departues in bavaria written in D
 
