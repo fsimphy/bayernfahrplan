@@ -2,7 +2,7 @@
 
 [![Build status](https://github.com/fsimphy/bayernfahrplan/workflows/bayernfahrplan%20workflow/badge.svg)](https://github.com/fsimphy/bayernfahrplan/actions)
 [![codecov](https://codecov.io/gh/fsimphy/bayernfahrplan/branch/develop/graph/badge.svg)](https://codecov.io/gh/fsimphy/bayernfahrplan)
-[![Join the chat at https://gitter.im/fsimphy/Lobby](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/fsimphy/Lobby)
+[![Join Chat](https://img.shields.io/badge/%5Bmatrix%5D-Join%20chat-blue)](https://matrix.to/#/#fsi-code:im.f3l.de)
 
 A JSON-fetcher for bus departues in bavaria written in D
 
@@ -13,7 +13,7 @@ These instructions will get you a copy of the project up and running on your loc
 ### Prerequisites
 
 #### D compiler
-Either [DMD](https://dlang.org/download.html#dmd) or [LDC](https://github.com/ldc-developers/ldc#installation) is needed to compile the project. The oldest supported version of DMD is 2.078.0 and the oldest support version of LDC is 1.8.0. Additionally, the packagemanager [DUB](https://code.dlang.org/) is needed. Install via your distribution’s packagemanager if you are running linux or via [Homebrew](https://brew.sh/) if you are running OS X:
+Either [DMD](https://dlang.org/download.html#dmd) or [LDC](https://github.com/ldc-developers/ldc#installation) is needed to compile the project. Both the latest version of DMD and LDC 1.19.0 are tested in CI, so these are the supported versions. Other recent versions are likely to work, too, but there is no guarantee. Additionally, the packagemanager [DUB](https://code.dlang.org/) is needed. Install it via your distribution’s packagemanager if you are running linux or via [Homebrew](https://brew.sh/) if you are running OS X:
 - Debian based systems:
 ```
 sudo wget http://master.dl.sourceforge.net/project/d-apt/files/d-apt.list -O /etc/apt/sources.list.d/d-apt.list
@@ -88,7 +88,7 @@ The project can be configured by commandline switches. These are the available o
 ```
 Usage: bayernfahrplan [options]
 
- Options:
+Options:
 -f             --file The file that the data is written to.
 -s             --stop The bus stop for which to fetch data.
 -r --replacement-file The file that contais the direction name replacement info.
@@ -114,6 +114,8 @@ dub test
 ```
 This runs all available tests.
 ## Deployment
+
+**TODO: Update this for newer versions of LDC. LDC (1.22.0) is now available on Arch Linux ARM...**
 
 Deploying the project on a Raspberry Pi requires some more work, because DMD is not able to build arm binaries and LDC is not available in the repositories of the major linux distributions for the Raspberry Pi.
 
