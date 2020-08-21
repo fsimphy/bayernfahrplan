@@ -41,7 +41,7 @@ void main(string[] args)
 
     if (helpInformation.helpWanted)
     {
-        defaultGetoptPrinter("Usage: bayernfahrplan [options]\n\n Options:",
+        defaultGetoptPrinter("Usage: bayernfahrplan [options]\n\nOptions:",
                 helpInformation.options);
         return;
     }
