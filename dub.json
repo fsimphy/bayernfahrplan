@@ -5,10 +5,10 @@
 		"Oliver Rümpelein"
 	],
 	"dependencies": {
-		"requests": "0.6.0",
-		"kxml": "~>1.0.1"
+		"requests": "~>1.0.12",
+		"fluent-asserts": "~>0.12.5"
 	},
 	"description": "A minimal D application.",
-	"copyright": "Copyright © 2018, Johannes Loher",
+	"copyright": "Copyright © 2018-2019, Johannes Loher",
 	"license": "MIT"
 }

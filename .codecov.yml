@@ -1,0 +1,23 @@
+ignore:
+- "*/package.d"
+
+coverage:
+  notify:
+    gitter:
+      default:
+        url: "https://webhooks.gitter.im/e/bbebe195871b946b0fac"
+        threshold: 1%
+  range: 70..90
+  round: up
+  precision: 2
+  status:
+    project:
+      default:
+        enabled: yes
+        target: 70%
+        threshold: 10%
+    patch:
+      default:
+        enabled: yes
+        target: 70%
+        threshold: 10%
