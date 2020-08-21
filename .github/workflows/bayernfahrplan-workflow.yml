@@ -1,0 +1,42 @@
+name: bayernfahrplan workflow
+
+on:
+  push:
+    branches: [ master, develop ]
+  pull_request:
+    branches: [ master, develop ]
+
+jobs:
+  test:
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+        dc: [dmd-latest, ldc-1.19.0]
+    runs-on: ${{ matrix.os }}
+
+    steps:
+    - uses: actions/checkout@v2
+    - uses: dlang-community/setup-dlang@7c3e57bdc1ff2d8994f00e61b3ef400e67d2d7ac
+      with:
+        compiler: ${{ matrix.dc }}
+
+    - name: 'Build'
+      run: |
+        dub build --compiler=$DC
+    - name: 'Test'
+      run: |
+        dub test --compiler=$DC
+  cov:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - uses: dlang-community/setup-dlang@7c3e57bdc1ff2d8994f00e61b3ef400e67d2d7ac
+
+    - name: 'Generate coverage report'
+      run: |
+        dub test --coverage --compiler=$DC
+    - name: 'Upload coverage report'
+      uses: codecov/codecov-action@v1
+      with:
+        fail_ci_if_error: true
