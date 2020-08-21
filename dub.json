@@ -5,8 +5,8 @@
 		"Oliver Rümpelein"
 	],
 	"dependencies": {
-		"requests": "~>1.0.5",
-		"fluent-asserts": "~>0.12.3"
+		"requests": "~>1.0.12",
+		"fluent-asserts": "~>0.12.5"
 	},
 	"description": "A minimal D application.",
 	"copyright": "Copyright © 2018-2019, Johannes Loher",

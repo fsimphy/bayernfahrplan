@@ -40,6 +40,7 @@ void loadSubstitutionFile(alias slurpFun = slurp)(string fileName)
 
 ///
 @system unittest
+
 {
     import std.typecons : Tuple, tuple;
 

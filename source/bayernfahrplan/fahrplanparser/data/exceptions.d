@@ -1,6 +1,6 @@
 module bayernfahrplan.fahrplanparser.data.exceptions;
 
-import std.json : JSONValue, JSON_TYPE;
+import std.json : JSONValue, JSONType;
 import std.format : format;
 
 /**
@@ -33,7 +33,7 @@ class UnexpectedDataException : Throwable
      *  expectedTypes   =   the types that have been expected
      *  actualType      =   the type that has been found at location `key`
      */
-    this(JSONValue payload, string key, JSON_TYPE[] expectedTypes, JSON_TYPE actualType,
+    this(JSONValue payload, string key, JSONType[] expectedTypes, JSONType actualType,
             string file = __FILE__, size_t line = __LINE__, Throwable nextInChain = null) @trusted
     {
         import std.array : array, front, popFront, join;
