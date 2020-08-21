@@ -1,5 +1,6 @@
 # bayernfahrplan
-[![Travis CI status](https://travis-ci.org/fsimphy/bayernfahrplan.svg?branch=develop)](https://travis-ci.org/fsimphy/bayernfahrplan)
+
+[![Build status](https://github.com/fsimphy/bayernfahrplan/workflows/bayernfahrplan%20workflow/badge.svg)](https://github.com/fsimphy/bayernfahrplan/actions)
 [![codecov](https://codecov.io/gh/fsimphy/bayernfahrplan/branch/develop/graph/badge.svg)](https://codecov.io/gh/fsimphy/bayernfahrplan)
 [![Join the chat at https://gitter.im/fsimphy/Lobby](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/fsimphy/Lobby)
 
