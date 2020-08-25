@@ -1,13 +1,17 @@
 # Contributing to bayernfahrplan
+
 First off, thank you for your interest in contributing to bayernfahrplan—we need all the help we can get! 
 
 The following is a set of guidelines for contributing to bayernfahrplan. These are mostly guidelines, not rules. Use your best judgment, and feel free to propose changes to this document in a pull request.
 
 ## Important resources
+
 - Documentation: [README.md](README.md) (we don’t have anything else at the moment)
 - Issue tracker: [Issues](https://github.com/fsimphy/bayernfahrplan/issues)
-- Communication: [![Join the chat at https://matrix.to/#/#fsi-code:im.f3l.de](https://img.shields.io/badge/%5Bmatrix%5D-Join%20chat-blue)](https://matrix.to/#/#fsi-code:im.f3l.de)
+- Communication: [![Join the chat at https://matrix.to/#/#fsi-code:im.f3l.de](https://img.shields.io/matrix/fsi-code:im.f3l.de)](https://matrix.to/#/#fsi-code:im.f3l.de)
+
 ## Building, running and testing
+
 To find out about how to build, run and test the project, read the corresponding sections in [README.md](README.md).
 
 ## Ways of contributing
@@ -17,11 +21,13 @@ To find out about how to build, run and test the project, read the corresponding
 This section guides you through submitting a bug report for bayernfahrplan. Following these guidelines helps maintainers and the community understand your report and reproduce the behavior.
 
 #### Before submitting a bug report
+
 - Make sure you are using the latest version of bayernfahrplan.
 - Check the [README.md](README.md) which covers some common problems.
 - Check if the problem has already been reported in our [issue tracker](https://github.com/fsimphy/bayernfahrplan/issues).
 
 #### How to submit a (good) bug report
+
 Bugs are tracked in our [issue tracker](https://github.com/fsimphy/bayernfahrplan/issues). When creating a bug report, please provide the following information by filling in the [template](.github/ISSUE_TEMPLATE/bug_report.md).
 
 Explain the problem and include additional details to help maintainers reproduce the problem:
@@ -65,6 +71,7 @@ Enhancement Suggestion are tracked in our [issue tracker](https://github.com/fsi
 ### Your first contribution
 
 If you are unsure where to start, you can look through issues tagged with `beginner` and `help wanted`:
+
 - [Beginner issues](https://github.com/fsimphy/bayernfahrplan/issues?utf8=%E2%9C%93&q=is%3Aissue+is%3Aopen+label%3A%22beginner%22) - issues which should only require a few lines of code, and a test or two.
 - [Help wanted issues](https://github.com/fsimphy/bayernfahrplan/issues?q=is%3Aissue+is%3Aopen+label%3A%22help+wanted%22) - issues which should be a bit more involved than `beginner` issues.
 
@@ -73,9 +80,11 @@ If you are unsure where to start, you can look through issues tagged with `begin
 #### Branching model
 
 We use a very simple branching model: The `master` branch always contains the most recent development version and releases are created by tagging. Changes are developed in feature branches and all merges are required to be done as pull requests. We also have a naming scheme for our feature branches:
+
 ```
 <scope>[-<issue_number>]_short-description
 ```
+
 Scope can be one of the following:
 - `feature` - new features and enhancements to extisting features
 - `bugfix` - bugfixes (obviously)
@@ -95,7 +104,9 @@ When creating a pull request, please provide the following information by fillin
 ## Styleguides
 
 ### Git commit messages
+
 Git commit messages must have the following format:
+
 ```
 <scope>: short description
 optionally some more descriptions in the following lines
@@ -117,6 +128,7 @@ For the actual text in the commit message, here are some additional guidelines:
 - Reference issues and pull requests liberally after the first line.
 
 ### D Styleguide
+
 All D code must adhere to [The D Style](https://dlang.org/dstyle.html). We suggest using [dfmt](https://github.com/dlang-community/dfmt) to format the code accordingly.
 
 ### Imports
