@@ -22,7 +22,7 @@ This section guides you through submitting a bug report for bayernfahrplan. Foll
 - Check if the problem has already been reported in our [issue tracker](https://github.com/fsimphy/bayernfahrplan/issues).
 
 #### How to submit a (good) bug report
-Bugs are tracked in our [issue tracker](https://github.com/fsimphy/bayernfahrplan/issues). When creating a bug report, please provide the following information by filling in the [template](.github/issue_template.md).
+Bugs are tracked in our [issue tracker](https://github.com/fsimphy/bayernfahrplan/issues). When creating a bug report, please provide the following information by filling in the [template](.github/ISSUE_TEMPLATE/bug_report.md).
 
 Explain the problem and include additional details to help maintainers reproduce the problem:
 
@@ -54,7 +54,7 @@ This section guides you through submitting an enhancement suggestion for bayernf
 
 #### How to submit a (good) enhancement suggestion
 
-Enhancement Suggestion are tracked in our [issue tracker](https://github.com/fsimphy/bayernfahrplan/issues). When creating an enhancement suggestion, please provide the following information by filling in the [template](.github/enhancement_template.md).
+Enhancement Suggestion are tracked in our [issue tracker](https://github.com/fsimphy/bayernfahrplan/issues). When creating an enhancement suggestion, please provide the following information by filling in the [template](.github/ISSUE_TEMPLATE/enhancement-request.md).
 
 - **Use a clear and descriptive title** for the issue to identify the suggestion.
 - **Provide a short summary describing the suggested enhancement.**
