@@ -1,3 +1,12 @@
+---
+name: Bug report
+about: Create a report to help us get rid of errors
+title: ''
+labels: bug
+assignees: ''
+
+---
+
 ## Summary
 
 (up to 60 words)

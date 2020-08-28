@@ -1,3 +1,12 @@
+---
+name: Enhancement request
+about: Suggest an idea for this project
+title: ''
+labels: ''
+assignees: ''
+
+---
+
 ## Summary
 
 (up to 60 words)
